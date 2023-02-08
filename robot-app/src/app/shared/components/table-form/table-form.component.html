@@ -1,0 +1,36 @@
+
+<div>
+    <form [formGroup]="form" (ngSubmit)="onSubmit()">
+        <div class="row">
+            <div class="col-6 form-group" *ngFor="let field of model?.fields" [ngClass]="applyCssError(field.name)">
+                <div *ngIf="['text', 'number', 'email'].includes(field.type)">
+                    <label for="{{ field.name }}">{{ field.label }}<span class="required">{{ isRequired(field.name) ? ' *' : '' }}</span></label>
+                    <input type="{{ field.type }}" id="{{ field.name }}" class="form-control" [ngClass]="applyCssError(field.name)"
+                        formControlName="{{ field.name }}" autocomplete="off" maxlength="{{ field.length }}">
+                </div>
+                <div *ngIf="['relationship'].includes(field.type)">
+                    <label for="{{ field.name }}">{{ field.label }}<span class="required">{{ isRequired(field.name) ? ' *' : '' }}</span></label>
+                    <select name="{{ field.name }}" id="{{ field.name }}" class="form-select"
+                        formControlName="{{ field.name }}" [ngClass]="applyCssError(field.name)">
+                        <option [value]="null">Select</option>
+                        <option *ngFor="let item of getOptions(field.relationship?.name ?? '')" [value]="item[field.relationship?.idAttribute ?? '']">
+                            {{ getShowFields(field.relationship?.name ?? '', item) }}
+                        </option>
+                    </select>
+                </div>
+                <div *ngIf="['date'].includes(field.type)">
+                    <label for="{{ field.name }}" tooltip="{{ field.label.length >= 20 ? field.label : '' }}">{{ field.label }}</label>
+                    <input type="text" class="form-control" bsDatepicker [bsConfig]="{ dateInputFormat: 'YYYY-MM-DD', containerClass: 'theme-default' }"
+                      id="{{ field.name }}" formControlName="{{ field.name }}">
+                </div>
+            </div>
+        </div>
+        <div class="form-group">
+            <button mat-raised-button color="default" type="button" (click)="onCancel()">Cancel</button>
+            <!-- <button mat-raised-button color="default" type="button" (click)="onClear()">Clear</button> -->
+            <button mat-raised-button color="primary" [disabled]="!form.valid">Save</button>
+        </div>
+    </form>
+
+    <app-debug-form [form]="form" *ngIf="debugForms"></app-debug-form>
+</div>

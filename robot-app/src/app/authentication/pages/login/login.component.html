@@ -1,0 +1,29 @@
+
+<div class="login-container">
+    <div class="content">
+        <div class="row">
+            <div class="col-12">
+                <label for="username" class="form-label">Username</label>
+                <input id="username" type="text" class="form-control"
+                    autocomplete="off" [(ngModel)]="user.username">
+            </div>
+        </div>
+        <br>
+        <div class="row">
+            <div class="col-12">
+                <label for="password" class="form-label">Password</label>
+                <input id="password" type="password" autocomplete="off"
+                    class="form-control" [(ngModel)]="user.password">
+            </div>
+        </div>
+        <br>
+        <div class="row">
+            <div class="col-12">
+                <button type="button" mat-raised-button color="primary" aria-label="Login" tooltip="Login"
+                    class="mb-1 btn-sm" (click)="onLogin()" [disabled]="!user.username || !user.password">
+                    <b>Login</b>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,91 @@
+
+<div class="card mt-3">
+    <div class="card-header container">
+      <div class="container">
+        <div class="row justify-content-between">
+          <div class="col-7 title">
+            <div class="fw-bold fs-5">Audit</div>
+          </div>
+          <div class="col-3 actions text-end">
+            <button mat-icon-button color="primary" tooltip="Show Filters" aria-label="Show Filters" *ngIf="!showFilter" (click)="showHideFilter(true)"><mat-icon>visibility</mat-icon></button>
+            <button mat-icon-button color="primary" tooltip="Hide Filters" aria-label="Hide Filters" *ngIf="showFilter" (click)="showHideFilter(false)"><mat-icon>visibility_off</mat-icon></button>
+            <button mat-icon-button color="primary" tooltip="Clear Filters" aria-label="Clear Filters" (click)="clearFilter()"><mat-icon>clear</mat-icon></button>
+            <button mat-icon-button color="primary" tooltip="Refresh" aria-label="Refresh" (click)="onRefresh()"><mat-icon>refresh</mat-icon></button>
+          </div>
+        </div>
+        <div class="row filters" [formGroup]="formFilter" *ngIf="showFilter">
+          <div class="col-4 col-sm-3 form-group" *ngFor="let field of getItemsToFilter(model?.fields)">
+            <div *ngIf="['text', 'number', 'email'].includes(field.type)">
+            <label for="{{ field.name }}" tooltip="{{ field.label.length >= 20 ? field.label : '' }}">{{ field.label }}</label>
+            <input type="{{ field.type }}" id="{{ field.name }}" class="form-control"
+                formControlName="{{ field.name }}" autocomplete="off" maxlength="{{ field.length }}">
+            </div>
+            <div *ngIf="['date'].includes(field.type)">
+                <label for="{{ field.name }}" tooltip="{{ field.label.length >= 20 ? field.label : '' }}">{{ field.label }}</label>
+                <input type="text" class="form-control" bsDatepicker [bsConfig]="{ dateInputFormat: 'YYYY-MM-DD', containerClass: 'theme-default' }"
+                id="{{ field.name }}" formControlName="{{ field.name }}">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body table-responsive align-middle">
+  
+      <mat-drawer-container class="container" autosize>
+        <mat-drawer #drawer class="sidenav" position="end" (closed)="onExitEditMode()">
+          <app-table-form [modelEdit]="modelEdit" (save)="onSave($event)" (cancel)="onCancel($event)" [editionMode]="editionMode"
+            *ngIf="modelEdit !== undefined && ['edit', 'create', 'copy'].includes(editionMode)"></app-table-form>
+        </mat-drawer>
+        <div class="sidenav-content">
+  
+          <div *ngIf="items$ | async as items; else loading">
+            <table class="table table-hover table-sm" *ngIf="items.length > 0; else isEmpty">
+              <thead>
+                <tr>
+                  <!-- <th class="align-middle" *ngFor="let column of model.fields">{{ beautifyName(column.name) }}</th> -->
+                  <th class="align-middle">USERNAME</th>
+                  <th class="align-middle">ENTITY</th>
+                  <th class="align-middle">ACTION</th>
+                  <th class="align-middle" style="width: 25%">PREVIOUS VALUES</th>
+                  <th class="align-middle" style="width: 25%">CURRENT VALUES</th>
+                  <th class="align-middle">CREATED AT</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let item of items">
+                  <td class="align-middle {{ column.name }}" *ngFor="let column of model.fields">
+                    <div *ngIf="column.name === 'username'">{{ getValues(item, column) }}</div>
+                    <div *ngIf="column.name === 'entity'">{{ getValues(item, column) }}</div>
+                    <div *ngIf="column.name === 'action'">{{ getValues(item, column) }}</div>
+                    <div *ngIf="column.name === 'createdAt'">{{ getValues(item, column) }}</div>
+                    <div *ngIf="(column.name === 'previousValues' || column.name === 'currentValues') && getLength(item, column) <= 3">
+                      <pre>{{ getString(item, column) }}</pre>
+                    </div>
+                    <app-pretty-json *ngIf="(column.name === 'previousValues' || column.name === 'currentValues') && getLength(item, column) > 3"
+                      [data]="getValues(item, column)"></app-pretty-json>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <ng-template #isEmpty>
+              <div class="is-empty">
+                <p>Nothing to be shown.</p>
+              </div>
+            </ng-template>
+          </div>
+  
+          <ng-template #loading>
+            <div class="loading-spinner-container">
+              <mat-spinner></mat-spinner>
+            </div>
+          </ng-template>
+        </div>
+      </mat-drawer-container>
+  
+    </div>
+    <div class="card-footer">
+      
+    </div>
+  </div>
+  
+  

@@ -1,0 +1,11 @@
+.panel-container {
+    display: flex;
+    justify-content: start;
+    gap: 2rem;
+    padding: 2rem;
+
+    mat-card {
+        margin: 1rem;
+        min-height: 150px;
+    }
+}

@@ -1,0 +1,96 @@
+.card-header {
+    padding: 0;
+    margin: 0;
+  
+    .container {
+      .title {
+        padding: 1rem;
+      }
+  
+      .actions {
+        min-width: 160px;
+        padding: 0.4rem;
+        padding-right: 1.4rem;
+      }
+    }
+  
+    .filters {
+      margin-bottom: 1rem;
+  
+      .clear-button {
+        padding: 0;
+  
+        button {
+          margin: 16px 0 -20px 0 !important;
+        }
+      }
+  
+      label {
+        max-width: 20ch;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+    }
+  }
+  
+  .card-body {
+    padding: 0;
+    min-height: 400px;
+  
+    .sidenav {
+      width: 80%;
+      padding: 1rem;
+      padding-right: 1.5rem;
+    }
+  
+    mat-drawer-container {
+      padding: 0;
+      min-height: 400px;
+  
+      mat-drawer {
+        background-color: rgb(247, 247, 247);
+      }
+    }
+  
+    table {
+      margin: 0;
+  
+      tr th {
+        padding-top: 0.6rem;
+        padding-bottom: 0.6rem;
+  
+        &.actions {
+          min-width: 130px;
+        }
+      }
+  
+      th,
+      td {
+        padding-left: 0.6rem;
+        padding-right: 0.6rem;
+      }
+  
+      td.actions {
+        padding: 0;
+      }
+    }
+  
+    .loading-spinner-container {
+      background: rgba(0, 0, 0, 0.05);
+      height: auto;
+      min-height: 400px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+  
+    .is-empty {
+      height: auto;
+      min-height: 400px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+  }
+  
