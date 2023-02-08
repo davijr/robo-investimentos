@@ -1,0 +1,29 @@
+.app-container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+
+    nav {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background-color: var(--primary);
+        height: 6rem;
+        padding: 0 2.4rem;
+
+        h3 {
+            margin: 0;
+            font-weight: 900;
+        }
+
+        div {
+            display: flex;
+            gap: 1rem;
+            
+            .active {
+                background-color: gray;
+            }
+        }
+    }
+
+}

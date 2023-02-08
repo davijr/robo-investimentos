@@ -11,19 +11,23 @@ const connectionOptions: any = {
   }
 }
 
-if (AppUtils.isDevEnvironment() && AppUtils.isDBShowSQL()) {
+if (AppUtils.isDBShowSQL()) {
   connectionOptions.logging = (msg: any) => logger.info(msg)
 } else {
   connectionOptions.logging = false
 }
+
 const database = new Sequelize(connectionOptions)
 
 const globalInitAttributes = {
   sequelize: database,
   freezeTableName: true,
   underscored: true,
-  timestamps: false
+  timestamps: true,
+  paranoid: true
 }
+
+globalInitAttributes.sequelize = database
 
 export {
   database,

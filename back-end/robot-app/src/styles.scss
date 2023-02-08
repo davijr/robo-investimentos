@@ -1,0 +1,90 @@
+@import '_theme';
+@import '_bootstrap';
+@import '_variables';
+@import '_fonts';
+@import '_scrollbar';
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: Roboto, "Helvetica Neue", sans-serif;
+}
+
+// snack-bar-container {
+//   padding: 0 !important;
+//   min-width: 400px !important;
+//   height: 54px !important;
+//   border: none !important;
+//   min-height: 0 !important;
+// }
+
+// snack-bar-container>div,
+// snack-bar-container>div>div {
+//   height: auto !important;
+// }
+
+// /* Importing Bootstrap SCSS file. */
+// @import "~bootstrap/scss/bootstrap";
+
+// /* Importing Datepicker SCSS file. */
+// @import "node_modules/ngx-bootstrap/datepicker/bs-datepicker";
+
+// /* Side Menu - Accordion */
+// accordion-group {
+//   &.panel:first-child {
+//     border-top: 1px solid rgb(190, 190, 190) !important;
+//   }
+//   .panel {
+//     border-radius: 0 !important;
+//     border: 0 !important;
+//     border-bottom: 1px solid rgb(190, 190, 190) !important;
+//   }
+//   .panel-heading {
+//     padding: 0.2rem !important;
+//     border-radius: 0 !important;
+//   }
+//   button {
+//     color: #000 !important;
+//     text-decoration: none !important;
+//     font-weight: 700 !important;
+//   }
+//   .panel-body {
+//     padding: 0 !important;
+//   }
+// }
+
+// button[disabled] {
+//   background: #ababab !important;
+//   color: #525252 !important;
+// }
+
+// .cdk-overlay-container {
+//   z-index: 999999 !important;
+// }
+
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');
+
+body * {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  font-size: 62.5%;
+  --nav-bg-color: #121212;
+  --nav-text-color: #fff;
+}
+
+body {
+  font-size: 1.6rem;
+  font-family: 'Roboto', sans-serif;
+}
+
+a {
+  text-decoration: none;
+}
