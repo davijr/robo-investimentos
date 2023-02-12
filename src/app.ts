@@ -3,19 +3,22 @@ import { database } from '@config/database'
 import logger from '@config/logger'
 import bodyParser from 'body-parser'
 import express from 'express'
-import { AppUtils } from '@utils/AppUtils'
 import mountRoutes from './routes'
 import JobQueue from './jobs/JobQueue'
+import { RobotService } from '@services/RobotService'
 
 (async () => {
+  const robotService = new RobotService()
+
   try {
-    if (AppUtils.isDBSync()) {
-      await database.sync()
-    }
+    await database.sync({ force: true })
   } catch (error) {
     logger.error(error)
   }
   JobQueue.run()
+
+  // get process pairs
+  robotService.processPairs()
 })()
 
 const app = express()

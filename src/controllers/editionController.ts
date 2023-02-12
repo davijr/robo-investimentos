@@ -1,10 +1,9 @@
 import logger from '@config/logger'
 import { EditionService } from '@services/EditionService'
 import express from 'express'
-import httpMiddleware from 'src/middleware/http.middleware'
 
 const editionRoutes = express.Router()
-editionRoutes.use(httpMiddleware)
+// editionRoutes.use(httpMiddleware)
 
 const editionService = new EditionService()
 
@@ -32,7 +31,11 @@ editionRoutes.get('/model/:model/:param', async (req: any, res: any) => {
 editionRoutes.get('/model-attributes/:model', async (req: any, res: any) => {
   const modelName = req.params.model
   logger.info(`GET /model-attributes/${modelName}`)
-  res.status(200).json(await editionService.getAttributes(modelName))
+  try {
+    res.status(200).json(await editionService.getAttributes(modelName))
+  } catch (message) {
+    return res.status(400).json({ message })
+  }
 })
 
 editionRoutes.get('/menu-options', async (req: any, res: any) => {

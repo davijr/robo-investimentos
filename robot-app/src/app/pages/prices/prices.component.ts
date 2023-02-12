@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core'
+import { EditionService } from 'src/app/edition/services/edition.service'
 import { RobotService } from 'src/app/services/robot.service'
 
 @Component({
@@ -9,7 +10,10 @@ import { RobotService } from 'src/app/services/robot.service'
 export class PricesComponent implements OnInit {
   prices: any
 
-  constructor (private robotService: RobotService) { }
+  constructor (
+    private robotService: RobotService,
+    private editionService: EditionService
+  ) { }
 
   ngOnInit (): void {
     // this.prices = this.robotService.getPrices()
@@ -28,6 +32,7 @@ export class PricesComponent implements OnInit {
         date: new Date(new Date().getTime() - i * 60000)
       })
     }
+    this.editionService.find({ model: 'User' }).subscribe(res => console.log('res', res))
   }
 
   onRefresh () {

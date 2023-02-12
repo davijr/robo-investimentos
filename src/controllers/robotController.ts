@@ -3,11 +3,15 @@ import { RobotService } from '@services/RobotService'
 
 const robotRoutes = express.Router()
 
-const service = new RobotService()
+const robotService = new RobotService()
 
-robotRoutes.get('/prices', async (req: any, res: any) => {
+robotRoutes.get('/test', (req, res) => {
+  // return res.status(200).send(robotService.getExchangeInfo())
+})
+
+robotRoutes.get('/pairs', async (req: any, res: any) => {
   try {
-    const items = await service.getPrices()
+    const items = robotService.getPairs()
     if (!items) {
       return res.status(400).json({ message: 'No content.' })
     }
