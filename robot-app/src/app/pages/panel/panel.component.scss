@@ -1,11 +1,36 @@
 .panel-container {
-    display: flex;
+    /*display: flex;
     justify-content: start;
-    gap: 2rem;
-    padding: 2rem;
+    gap: 2rem;*/
+    padding: 3rem;
 
     mat-card {
         margin: 1rem;
         min-height: 150px;
+    }
+
+    .loading-spinner {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100%;
+    }
+
+    h1 {
+        font-size: 34px;
+        font-weight: 700;
+    }
+
+    .price {
+        font-size: 20px;
+        font-weight: 400;
+    }
+
+    mat-card:hover {
+        background-color: #ccc;
+        mat-list-item {
+            font-size: 20px;
+            font-weight: 400;
+        }
     }
 }

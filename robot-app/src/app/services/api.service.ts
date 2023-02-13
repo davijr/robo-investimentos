@@ -1,11 +1,12 @@
 import { HttpClient } from '@angular/common/http'
 import { Injectable } from '@angular/core'
+import { environment } from 'src/environments/environment'
 
 @Injectable({
   providedIn: 'root'
 })
 export class ApiService {
-  API_URL = 'http://localhost:4200/api'
+  API_URL = environment.API_URL
 
   // eslint-disable-next-line no-useless-constructor
   constructor (private http: HttpClient) { }

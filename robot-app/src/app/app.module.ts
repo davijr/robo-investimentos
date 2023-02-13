@@ -32,6 +32,8 @@ import { SettingsComponent } from './pages/settings/settings.component'
 import { TableComponent } from './components/table/table.component'
 import { MatTableModule } from '@angular/material/table'
 import { MatCardModule } from '@angular/material/card'
+import { MatListModule } from '@angular/material/list'
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner'
 import { PanelComponent } from './pages/panel/panel.component'
 
 @NgModule({
@@ -67,6 +69,8 @@ import { PanelComponent } from './pages/panel/panel.component'
     MatButtonModule,
     MatInputModule,
     MatSliderModule,
+    MatListModule,
+    MatProgressSpinnerModule,
     AccordionModule, // TODO
     BsDropdownModule.forRoot(),
     ModalModule.forRoot(),

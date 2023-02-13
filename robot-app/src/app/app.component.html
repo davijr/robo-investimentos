@@ -1,12 +1,12 @@
 
 <div class="app-container">
     <nav>
-        <h3>Robot</h3>
+        <h3 style="color: #aa0000;">Robot</h3>
         <div>
-            <button mat-button color="secondary" [ngClass]="{'active': isActive('panel')}" [routerLink]="['/panel']">Panel</button>
-            <button mat-button color="secondary" [ngClass]="{'active': isActive('prices')}" [routerLink]="['/prices']">Prices</button>
-            <button mat-button color="secondary" [ngClass]="{'active': isActive('orders')}" [routerLink]="['/orders']">Orders</button>
-            <button mat-button color="secondary" [ngClass]="{'active': isActive('settings')}" [routerLink]="['/settings']">Settings</button>
+            <button mat-button color="primary" [ngClass]="{'active': isActive('panel')}" [routerLink]="['/panel']">Panel</button>
+            <!-- <button mat-button color="primary" [ngClass]="{'active': isActive('prices')}" [routerLink]="['/prices']">Prices</button -->
+            <button mat-button color="primary" [ngClass]="{'active': isActive('orders')}" [routerLink]="['/orders']">Orders</button>
+            <button mat-button color="primary" [ngClass]="{'active': isActive('settings')}" [routerLink]="['/settings']">Settings</button>
         </div>
     </nav>
     <div class="content">

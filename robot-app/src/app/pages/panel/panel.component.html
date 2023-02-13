@@ -1,76 +1,39 @@
 <div class="panel-container">
-    <div class="row">
-        <div class="col col-6">
-            <mat-card>
-                <mat-card-header>
-                <mat-card-title>Balance</mat-card-title>
-                </mat-card-header>
-                <mat-card-content>
-                    <h1>
-                        2500.00
-                    </h1>
-                </mat-card-content>
-            </mat-card>
+    <mat-spinner *ngIf="loading; else notLoading" style="margin: 20% auto;"></mat-spinner>
+    <ng-template #notLoading>
+        <h1>Balances</h1>
+        <hr><br>
+        <div class="row">
+            <div class="col col-3" *ngFor="let balance of accountInfo?.balances">
+                <mat-card>
+                    <mat-card-header>
+                        <mat-card-title>{{ balance?.asset }}</mat-card-title>
+                    </mat-card-header>
+                    <mat-card-content>
+                        <mat-list>
+                            <mat-list-item class="price">{{ balance.free }}</mat-list-item>
+                        </mat-list>
+                    </mat-card-content>
+                </mat-card>
+            </div>
         </div>
-        <div class="col col-6">
-            <mat-card>
-                <mat-card-header>
-                <mat-card-title>Profit</mat-card-title>
-                </mat-card-header>
-                <mat-card-content>
-                    <h1>
-                        3.59%
-                    </h1>
-                </mat-card-content>
-            </mat-card>
+        <br>
+        <h1>Prices</h1>
+        <hr><br>
+        <div class="row">
+            <div class="col col-4" *ngFor="let price of prices">
+                <mat-card>
+                    <mat-card-header>
+                    <mat-card-title>{{ price.asset }} (24hs)</mat-card-title>
+                    </mat-card-header>
+                    <mat-card-content>
+                        <mat-list>
+                            <mat-list-item class="price"><b>BUY:</b>&nbsp;{{ price.ask }}</mat-list-item>
+                            <mat-list-item class="price"><b>SELL:</b>&nbsp;{{ price.bid }}</mat-list-item>
+                        </mat-list>
+                    </mat-card-content>
+                </mat-card>
+            </div>
         </div>
-        <div class="col col-6">
-            <mat-card>
-                <mat-card-header>
-                <mat-card-title>Highest price (24hs)</mat-card-title>
-                </mat-card-header>
-                <mat-card-content>
-                    <h1>
-                        344588.00
-                    </h1>
-                </mat-card-content>
-            </mat-card>
-        </div>
-        <div class="col col-6">
-            <mat-card>
-                <mat-card-header>
-                <mat-card-title>Lowest price (24hs)</mat-card-title>
-                </mat-card-header>
-                <mat-card-content>
-                    <h1>
-                        340109.00
-                    </h1>
-                </mat-card-content>
-            </mat-card>
-        </div>
-        <div class="col col-6">
-            <mat-card>
-                <mat-card-header>
-                <mat-card-title>Volume (24hs)</mat-card-title>
-                </mat-card-header>
-                <mat-card-content>
-                    <h1>
-                        116.30994645
-                    </h1>
-                </mat-card-content>
-            </mat-card>
-        </div>
-        <div class="col col-6">
-            <mat-card>
-                <mat-card-header>
-                <mat-card-title>Opened Orders (24hs)</mat-card-title>
-                </mat-card-header>
-                <mat-card-content>
-                    <h1>
-                        341311.0045
-                    </h1>
-                </mat-card-content>
-            </mat-card>
-        </div>
-    </div>
+    </ng-template>
 </div>
