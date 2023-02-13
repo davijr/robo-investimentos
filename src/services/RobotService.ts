@@ -4,7 +4,7 @@ import WebSocket from 'ws'
 // constants
 const AppConstants = {
   API: {
-    URL_STREAM: `wss://stream.binance.com:9443/ws/!ticker@arr`
+    URL_STREAM: `${process.env.API_URL_STREAM}/!ticker@arr`
   },
   QUOTE: 'USDT',
   PROFITABILITY: 1.02 // 1.003 está considerando as taxas em todas as operações
@@ -15,6 +15,7 @@ let pairs: any = {}
 let book: any = {}
 let amount = 100;
 
+/*
 const ws = new WebSocket(AppConstants.API.URL_STREAM)
 ws.on('message', async (event: any) => {
   const obj = JSON.parse(event?.toString())
@@ -27,6 +28,7 @@ ws.on('message', async (event: any) => {
   processBuyBuySell()
   processBuySellSell()
 })
+*/
 
 function processBuyBuySell () {
   console.log(new Date().toLocaleTimeString())

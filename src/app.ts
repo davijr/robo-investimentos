@@ -4,7 +4,6 @@ import logger from '@config/logger'
 import bodyParser from 'body-parser'
 import express from 'express'
 import mountRoutes from './routes'
-import JobQueue from './jobs/JobQueue'
 import { RobotService } from '@services/RobotService'
 
 (async () => {
@@ -20,6 +19,7 @@ import { RobotService } from '@services/RobotService'
   // get process pairs
   robotService.processPairs()
   robotService.processBuyBuySell()
+
 })()
 
 const app = express()
