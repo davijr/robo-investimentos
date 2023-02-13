@@ -15,10 +15,11 @@ import { RobotService } from '@services/RobotService'
   } catch (error) {
     logger.error(error)
   }
-  JobQueue.run()
+  // JobQueue.run()
 
   // get process pairs
   robotService.processPairs()
+  robotService.processBuyBuySell()
 })()
 
 const app = express()
