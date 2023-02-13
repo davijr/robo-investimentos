@@ -15,7 +15,6 @@ let pairs: any = {}
 let book: any = {}
 let amount = 100;
 
-/*
 const ws = new WebSocket(AppConstants.API.URL_STREAM)
 ws.on('message', async (event: any) => {
   const obj = JSON.parse(event?.toString())
@@ -25,10 +24,9 @@ ws.on('message', async (event: any) => {
       bid: parseFloat(element.b)
     }
   })
-  processBuyBuySell()
-  processBuySellSell()
+  // processBuyBuySell()
+  // processBuySellSell()
 })
-*/
 
 function processBuyBuySell () {
   console.log(new Date().toLocaleTimeString())
@@ -75,6 +73,21 @@ function processBuySellSell () {
 export class RobotService {
   getPairs () {
     return pairs
+  }
+
+  getPrices (assets = []) {
+    const prices: any = []
+    assets.forEach(asset => {
+      const symbol = asset + AppConstants.QUOTE
+      const price = book[symbol]
+      if (price) {
+        prices.push({
+          asset,
+          ...price
+        })
+      }
+    })
+    return prices
   }
 
   async processPairs () {

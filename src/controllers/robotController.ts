@@ -5,8 +5,16 @@ const robotRoutes = express.Router()
 
 const robotService = new RobotService()
 
-robotRoutes.get('/test', (req, res) => {
-  // return res.status(200).send(robotService.getExchangeInfo())
+robotRoutes.post('/prices', async (req: any, res: any) => {
+  try {
+    const items = robotService.getPrices(req.body)
+    if (!items) {
+      return res.status(400).json({ message: 'No content.' })
+    }
+    return res.status(200).json(items)
+  } catch (message) {
+    return res.status(400).json({ message })
+  }
 })
 
 robotRoutes.get('/pairs', async (req: any, res: any) => {
