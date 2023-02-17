@@ -1,5 +1,10 @@
+import { OrderSideEnum } from '@models/enum/OrderSideEnum'
+import { Order } from '@models/Order'
 import axios from 'axios'
 import WebSocket from 'ws'
+import { OrderService } from './OrderService'
+
+const orderService = new OrderService()
 
 // constants
 const AppConstants = {
@@ -12,21 +17,39 @@ const AppConstants = {
 
 // variables
 let pairs: any = {}
-let book: any = {}
-let amount = 100;
+const book: any = {}
+const amount = 100
 
-const ws = new WebSocket(AppConstants.API.URL_STREAM)
-ws.on('message', async (event: any) => {
-  const obj = JSON.parse(event?.toString())
-  obj.forEach((element: any) => {
-    book[element.s] = {
-      ask: parseFloat(element.a),
-      bid: parseFloat(element.b)
-    }
+initializeService()
+
+function initializeService () {
+  createWebSocket()
+}
+
+async function executeStrategy (type: 'BSS' | 'BBS', action1, action2, action3) {
+  const order1: any = await = orderService.newOrder({ symbol: symbols[0], quantity: 1 } as Order)
+  console.log('TRANSAÇÃO 1', order1)
+  const order2: any = await = orderService.newOrder({ symbol: symbols[1], quantity: order1.fills?.[0].qty || 1,
+    side: (type === 'BBS') ? OrderSideEnum.BUY : OrderSideEnum.SELL } as Order)
+  console.log('TRANSAÇÃO 2', order2)
+  const order3: any = await = orderService.newOrder({ symbol: symbols[2], quantity: order2.fills?.[0].qty || 1, side: OrderSideEnum.SELL } as Order)
+  console.log('TRANSAÇÃO 3', order3)
+}
+
+function createWebSocket () {
+  const ws = new WebSocket(AppConstants.API.URL_STREAM)
+  ws.on('message', async (event: any) => {
+    const obj = JSON.parse(event?.toString())
+    obj.forEach((element: any) => {
+      book[element.s] = {
+        ask: parseFloat(element.a),
+        bid: parseFloat(element.b)
+      }
+    })
+    processBuyBuySell()
+    processBuySellSell()
   })
-  // processBuyBuySell()
-  // processBuySellSell()
-})
+}
 
 function processBuyBuySell () {
   console.log(new Date().toLocaleTimeString())
@@ -53,7 +76,7 @@ function processBuySellSell () {
   console.log(new Date().toLocaleTimeString())
   pairs?.buySellSell?.combinations?.forEach((candidate: any) => {
     // buy1
-    let priceBuy =  book[candidate.buy.symbol]
+    let priceBuy = book[candidate.buy.symbol]
     priceBuy = priceBuy?.ask
     // buy2
     let priceSell1 = book[candidate.sell1.symbol]
@@ -66,6 +89,8 @@ function processBuySellSell () {
     if (crossRate > AppConstants.PROFITABILITY && priceBuy && priceSell1 && priceSell2) {
       console.log(`Oportunidade BSS em ${candidate.buy.symbol} > ${candidate.sell1.symbol} > ${candidate.sell2.symbol} = ${crossRate}.`)
       console.log(`Inicial: ${AppConstants.QUOTE} ${amount}, Final: ${AppConstants.QUOTE} ${(amount / priceBuy) * priceSell1 * priceSell2}`)
+      console.log('Iniciando triangulação...')
+      await executeStrategy('BSS', priceBuy, priceSell1, priceSell2)
     }
   })
 }
@@ -171,7 +196,7 @@ export class RobotService {
       let priceSell = book[candidate.sell.symbol]
       priceSell = priceSell.bid
       // profitability strategy
-      const crossRate = (1/priceBuy1) * (1/priceBuy2) * priceSell
+      const crossRate = (1 / priceBuy1) * (1 / priceBuy2) * priceSell
       if (crossRate > AppConstants.PROFITABILITY && priceBuy1 && priceBuy2 && priceSell) {
         console.log(`Oportunidade em ${candidate.buy1.symbol} > ${candidate.buy2.symbol} > ${candidate.sell.symbol}.`)
       }
