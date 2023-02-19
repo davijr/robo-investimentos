@@ -9,10 +9,9 @@ import { OrderService } from './OrderService'
 
 const orderService = new OrderService()
 
-// variables
+// TODO move variables to database (maybe)
 let pairs: any = {}
 const book: any = {}
-const amount = 100
 
 let robotStatus: RobotStatusEnum = RobotStatusEnum.SEARCHING
 
@@ -124,7 +123,7 @@ async function processBuyBuySell () {
     if (crossRate > AppConstants.PROFITABILITY && priceBuy1 && priceBuy2 && priceSell) {
       const symbols = [candidate.buy1.symbol, candidate.buy2.symbol, candidate.sell.symbol]
       logger.info(`Oportunidade BBS em ${symbols.join(' > ')} = ${crossRate}.`)
-      // logger.info(`Inicial: ${AppConstants.QUOTE} ${amount}, Final ${AppConstants.QUOTE} ${((amount / priceBuy1) / priceBuy2) * priceSell}`)
+      logger.info(`Inicial: ${AppConstants.QUOTE} ${AppConstants.AMOUNT}, Final ${AppConstants.QUOTE} ${((AppConstants.AMOUNT / priceBuy1) / priceBuy2) * priceSell}`)
       await executeStrategy('BBS', symbols)
     }
   })
@@ -147,7 +146,7 @@ async function processBuySellSell () {
     if (crossRate > AppConstants.PROFITABILITY && priceBuy && priceSell1 && priceSell2) {
       const symbols = [candidate.buy.symbol, candidate.sell1.symbol, candidate.sell2.symbol]
       logger.info(`Oportunidade BSS em ${symbols.join(' > ')} = ${crossRate}.`)
-      // logger.info(`Inicial: ${AppConstants.QUOTE} ${amount}, Final: ${AppConstants.QUOTE} ${(amount / priceBuy) * priceSell1 * priceSell2}`)
+      logger.info(`Inicial: ${AppConstants.QUOTE} ${AppConstants.AMOUNT}, Final: ${AppConstants.QUOTE} ${(AppConstants.AMOUNT / priceBuy) * priceSell1 * priceSell2}`)
       await executeStrategy('BSS', symbols)
     }
   })
