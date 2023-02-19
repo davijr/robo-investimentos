@@ -5,6 +5,7 @@ import { AppConstants } from '@utils/AppContants'
 import { AppUtils } from '@utils/AppUtils'
 import axios from 'axios'
 import WebSocket from 'ws'
+import { NotificationService, NotificationSoundType } from './NotificationService'
 import { OrderService } from './OrderService'
 
 const orderService = new OrderService()
@@ -60,7 +61,7 @@ async function executeStrategy (type: 'BSS' | 'BBS', symbols: string[]) {
       logger.info(`EXECUTANDO TRANSAÇÃO 2: ${transactionType} ${symbols[1]}`)
       const newOrder2 = {
         symbol: symbols[1],
-        quantity: order1.fills?.[0].qty || 1,
+        quantity: order1.fills?.[0].qty,
         side: transactionType
       }
       // await AppUtils.sleep(5)
@@ -70,17 +71,19 @@ async function executeStrategy (type: 'BSS' | 'BBS', symbols: string[]) {
       logger.info(`EXECUTANDO TRANSAÇÃO 3: SELL ${symbols[2]}`)
       const newOrder3 = {
         symbol: symbols[2],
-        quantity: order2.fills?.[0].qty || 1,
+        quantity: order2.fills?.[0].qty,
         side: OrderSideEnum.SELL
       }
       // await AppUtils.sleep(5)
       const order3: any = await orderService.newOrder(newOrder3)
       logger.info('ORDER 3', order3)
+      NotificationService.playSound(NotificationSoundType.COMPLETED)
       logger.info('##################### ESPERAR 1 MINUTO #####################')
       await AppUtils.sleep(60)
       robotStatus = RobotStatusEnum.SEARCHING
     }
   } catch (e: any) {
+    NotificationService.playSound(NotificationSoundType.ERROR)
     logger.error(`Deu ruim na hora de tentar executar estratégia. ${AppUtils.extractErrorMessage(e)}`)
     robotStatus = RobotStatusEnum.SEARCHING
     // logger.info('##################### PARAR ROBÔ #####################')
@@ -122,6 +125,7 @@ async function processBuyBuySell () {
     const crossRate = (1 / priceBuy1) * (1 / priceBuy2) * priceSell
     if (crossRate > AppConstants.PROFITABILITY && priceBuy1 && priceBuy2 && priceSell) {
       const symbols = [candidate.buy1.symbol, candidate.buy2.symbol, candidate.sell.symbol]
+      NotificationService.playSound(NotificationSoundType.FOUND)
       logger.info(`Oportunidade BBS em ${symbols.join(' > ')} = ${crossRate}.`)
       logger.info(`Inicial: ${AppConstants.QUOTE} ${AppConstants.AMOUNT}, Final ${AppConstants.QUOTE} ${((AppConstants.AMOUNT / priceBuy1) / priceBuy2) * priceSell}`)
       await executeStrategy('BBS', symbols)
@@ -145,6 +149,7 @@ async function processBuySellSell () {
     const crossRate = (1 / priceBuy) * priceSell1 * priceSell2
     if (crossRate > AppConstants.PROFITABILITY && priceBuy && priceSell1 && priceSell2) {
       const symbols = [candidate.buy.symbol, candidate.sell1.symbol, candidate.sell2.symbol]
+      NotificationService.playSound(NotificationSoundType.FOUND)
       logger.info(`Oportunidade BSS em ${symbols.join(' > ')} = ${crossRate}.`)
       logger.info(`Inicial: ${AppConstants.QUOTE} ${AppConstants.AMOUNT}, Final: ${AppConstants.QUOTE} ${(AppConstants.AMOUNT / priceBuy) * priceSell1 * priceSell2}`)
       await executeStrategy('BSS', symbols)
