@@ -5,13 +5,26 @@ const robotRoutes = express.Router()
 
 const robotService = new RobotService()
 
-robotRoutes.get('/prices', async (req: any, res: any) => {
+robotRoutes.get('/status', async (req: any, res: any) => {
   try {
-    const items = robotService.getPrices(req.query?.assets?.split(','))
-    if (!items) {
+    const result = robotService.getRobotStatus()
+    if (!result) {
       return res.status(400).json({ message: 'No content.' })
     }
-    return res.status(200).json(items)
+    return res.status(200).json(result)
+  } catch (message) {
+    return res.status(400).json({ message })
+  }
+})
+
+robotRoutes.post('/status/:status', async (req: any, res: any) => {
+  try {
+    robotService.setRobotStatus(req.params.status)
+    const result = robotService.getRobotStatus()
+    if (!result) {
+      return res.status(400).json({ message: 'No content.' })
+    }
+    return res.status(200).json(result)
   } catch (message) {
     return res.status(400).json({ message })
   }

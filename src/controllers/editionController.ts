@@ -38,11 +38,6 @@ editionRoutes.get('/model-attributes/:model', async (req: any, res: any) => {
   }
 })
 
-editionRoutes.get('/menu-options', async (req: any, res: any) => {
-  logger.info('GET /menu-options')
-  res.status(200).json(await editionService.getMenuOptions())
-})
-
 editionRoutes.post('/model/:model/search', async (req: any, res: any) => {
   const modelName = req.params.model
   const searchOptions = req.query
