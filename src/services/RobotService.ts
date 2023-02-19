@@ -50,7 +50,7 @@ async function executeStrategy (type: 'BSS' | 'BBS', symbols: string[]) {
       logger.info(`EXECUTANDO TRANSAÇÃO 1: BUY ${symbols[0]}`)
       const newOrder1 = {
         symbol: symbols[0],
-        quantity: 1,
+        quantity: AppConstants.AMOUNT,
         side: OrderSideEnum.BUY
       }
       // await AppUtils.sleep(5)
@@ -108,7 +108,7 @@ function createWebSocket () {
 }
 
 async function processBuyBuySell () {
-  logger.info(new Date().toLocaleString())
+  // logger.info(new Date().toLocaleString())
   pairs?.buyBuySell?.combinations?.forEach(async (candidate: any) => {
     // buy1
     let priceBuy1 = book[candidate.buy1.symbol]
@@ -131,7 +131,7 @@ async function processBuyBuySell () {
 }
 
 async function processBuySellSell () {
-  logger.info(new Date().toLocaleString())
+  // logger.info(new Date().toLocaleString())
   pairs?.buySellSell?.combinations?.forEach(async (candidate: any) => {
     // buy1
     let priceBuy = book[candidate.buy.symbol]
