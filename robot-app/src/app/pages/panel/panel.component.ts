@@ -1,6 +1,10 @@
+/* eslint-disable no-useless-constructor */
 import { Component, OnInit } from '@angular/core'
+import { catchError, Observable, of, tap } from 'rxjs'
+import { OrderService } from 'src/app/services/order.service'
 import { RobotService } from 'src/app/services/robot.service'
 import { WalletService } from 'src/app/services/wallet.service'
+import { AlertService } from 'src/app/shared/services/alert.service'
 
 @Component({
   selector: 'app-panel',
@@ -8,25 +12,50 @@ import { WalletService } from 'src/app/services/wallet.service'
   styleUrls: ['./panel.component.scss']
 })
 export class PanelComponent implements OnInit {
-  loading = true
-  accountInfo: any = {}
-  prices: any = []
+  accountInfo$: Observable<any> = new Observable<any>()
+  orderHistory$: Observable<any> = new Observable<any>()
 
   constructor (
     private walletService: WalletService,
-    private robotService: RobotService
+    private orderService: OrderService,
+    private robotService: RobotService,
+    private alert: AlertService
   ) { }
 
   ngOnInit (): void {
-    this.walletService.getAccountInfo().subscribe(accountInfo => {
-      this.accountInfo = accountInfo
-      const assets = this.accountInfo?.balances?.map((balance: any) => {
-        return balance.asset
+    this.onRefreshBalances()
+    this.onRefreshHistory()
+  }
+
+  onRefreshBalances () {
+    this.accountInfo$ = this.walletService.getAccountInfo().pipe(
+      tap(accountInfo => {
+        // const assets = this.accountInfo?.balances?.map((balance: any) => {
+        //   return balance.asset
+        // })
+        // TODO get prices for each asset
+        // this.robotService.getPrices(assets).subscribe((prices: any) => {
+        //   this.prices = prices
+        //   this.loading = false
+        // }, (e: any) => this.handleError(e))
+      }),
+      catchError(async e => {
+        this.handleError(e)
+        return of([])
       })
-      this.robotService.getPrices(assets).subscribe((prices: any) => {
-        this.prices = prices
-        this.loading = false
+    )
+  }
+
+  onRefreshHistory () {
+    this.orderHistory$ = this.orderService.getHistory().pipe(
+      catchError(async e => {
+        this.handleError(e)
+        return of([])
       })
-    })
+    )
+  }
+
+  private handleError (e: any) {
+    this.alert.toastError(e?.message || e)
   }
 }

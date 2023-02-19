@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core'
-import { map, Observable, take } from 'rxjs'
+import { Observable, take } from 'rxjs'
 import { ApiService } from './api.service'
 
 @Injectable({
@@ -12,5 +12,13 @@ export class RobotService {
 
   getPrices (assets = []): Observable<any> {
     return this.api.postRequest(`${this.BASE_URL}prices`, assets).pipe(take(1))
+  }
+
+  getRobotStatus (): Observable<any> {
+    return this.api.getRequest(`${this.BASE_URL}status`, {}).pipe(take(1))
+  }
+
+  setRobotStatus (status: string): Observable<any> {
+    return this.api.postRequest(`${this.BASE_URL}status/${status}`, {}).pipe(take(1))
   }
 }

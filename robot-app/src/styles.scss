@@ -88,3 +88,19 @@ body {
 a {
   text-decoration: none;
 }
+
+h1 {
+  font-size: 34px;
+  font-weight: 700;
+  padding: 1rem;
+  button {
+    vertical-align: middle !important;
+  }
+}
+
+nav, .content {
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+  padding-left: 2.4rem;
+  padding-right: 2.4rem;
+}

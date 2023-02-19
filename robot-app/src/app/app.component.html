@@ -1,7 +1,17 @@
 
 <div class="app-container">
     <nav>
-        <h3 style="color: #aa0000;">Robot</h3>
+        <h1>
+            Robot
+            <button mat-fab color="primary" tooltip="Stop" aria-label="Stop" class="ng-btn-lg"
+                (click)="setRobotStatus('STOPPED')" *ngIf="robotStatus !== 'STOPPED'">
+                <mat-icon>toggle_on</mat-icon>
+            </button>
+            <button mat-fab color="light" tooltip="Activate" aria-label="Activate"
+                (click)="setRobotStatus('SEARCHING')" *ngIf="robotStatus === 'STOPPED'">
+                <mat-icon>toggle_off</mat-icon>
+            </button>
+        </h1>
         <div>
             <button mat-button color="primary" [ngClass]="{'active': isActive('panel')}" [routerLink]="['/panel']">Panel</button>
             <!-- <button mat-button color="primary" [ngClass]="{'active': isActive('prices')}" [routerLink]="['/prices']">Prices</button -->

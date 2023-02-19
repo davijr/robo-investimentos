@@ -1,39 +1,66 @@
 <div class="panel-container">
-    <mat-spinner *ngIf="loading; else notLoading" style="margin: 20% auto;"></mat-spinner>
-    <ng-template #notLoading>
-        <h1>Balances</h1>
-        <hr><br>
-        <div class="row">
-            <div class="col col-3" *ngFor="let balance of accountInfo?.balances">
-                <mat-card>
-                    <mat-card-header>
-                        <mat-card-title>{{ balance?.asset }}</mat-card-title>
-                    </mat-card-header>
-                    <mat-card-content>
-                        <mat-list>
-                            <mat-list-item class="price">{{ balance.free }}</mat-list-item>
-                        </mat-list>
-                    </mat-card-content>
-                </mat-card>
-            </div>
+    <h1>
+        Balances
+        <button mat-icon-button color="primary" tooltip="Refresh" aria-label="Refresh" (click)="onRefreshBalances()">
+            <mat-icon>refresh</mat-icon>
+        </button>
+    </h1>
+    <hr><br>
+    <div class="row" *ngIf="accountInfo$ | async as accountInfo; else loadingAccountInfo">
+        <h3 *ngIf="accountInfo.length === 0">Nothing to show.</h3>
+        <div class="col col-3" *ngFor="let balance of accountInfo?.balances">
+            <mat-card>
+                <mat-card-header>
+                    <mat-card-title><b>ASSET: </b>{{ balance?.asset }}</mat-card-title>
+                </mat-card-header>
+                <mat-card-content>
+                    <mat-list>
+                        <mat-list-item class="price">{{ balance.free }}</mat-list-item>
+                    </mat-list>
+                </mat-card-content>
+            </mat-card>
         </div>
-        <br>
-        <h1>Prices</h1>
-        <hr><br>
-        <div class="row">
-            <div class="col col-4" *ngFor="let price of prices">
-                <mat-card>
-                    <mat-card-header>
-                    <mat-card-title>{{ price.asset }} (24hs)</mat-card-title>
-                    </mat-card-header>
-                    <mat-card-content>
-                        <mat-list>
-                            <mat-list-item class="price"><b>BUY:</b>&nbsp;{{ price.ask }}</mat-list-item>
-                            <mat-list-item class="price"><b>SELL:</b>&nbsp;{{ price.bid }}</mat-list-item>
-                        </mat-list>
-                    </mat-card-content>
-                </mat-card>
-            </div>
+    </div>
+    <ng-template #loadingAccountInfo>
+        <mat-spinner style="margin: 0 auto;"></mat-spinner>
+    </ng-template>
+    <br>
+    <h1>
+        My Trades
+        <button mat-icon-button color="primary" tooltip="Refresh" aria-label="Refresh" (click)="onRefreshHistory()">
+            <mat-icon>refresh</mat-icon>
+        </button>
+    </h1>
+    <hr><br>
+    <div class="row" *ngIf="orderHistory$ | async as orderHistory; else loadingHistory">
+        <h3 *ngIf="orderHistory.length === 0">Nothing to show.</h3>
+        <div class="col col-4" *ngFor="let order of orderHistory">
+            <mat-card>
+                <mat-card-header>
+                <mat-card-title><b>SYMBOL: </b>{{ order.symbol }}</mat-card-title>
+                </mat-card-header>
+                <mat-card-content>
+                    <table class="table table-sm table-striped table-hover">
+                        <tr class="table-primary">
+                            <th>Time</th>
+                            <th>Quantity</th>
+                            <th>Price</th>
+                            <th>Quote Quantity</th>
+                            <th>Comission</th>
+                        </tr>
+                        <tr *ngFor="let history of order.history">
+                            <td>{{ history.time | formatTimestamp }}</td>
+                            <td>{{ history.qty }}</td>
+                            <td>{{ history.price }}</td>
+                            <td>{{ history.quoteQty }}</td>
+                            <td>{{ history.commission }} {{ history.commissionAsset }}</td>
+                        </tr>
+                    </table>
+                </mat-card-content>
+            </mat-card>
         </div>
+    </div>
+    <ng-template #loadingHistory>
+        <mat-spinner style="margin: 0 auto;"></mat-spinner>
     </ng-template>
 </div>

@@ -9,12 +9,15 @@
         justify-content: space-between;
         background-color: var(--secondary);
         height: 6rem;
-        padding: 0 2.4rem;
         margin-top: 0.5rem; // TODO remover
 
-        h3 {
-            margin: 0;
-            font-weight: 900;
+        h1 {
+            font-weight: 700;
+            color: rgb(175, 23, 23);
+            margin-top: 2rem;
+            button, span {
+                margin-left: 2rem;
+            }
         }
 
         div {
