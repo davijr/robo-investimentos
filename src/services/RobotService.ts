@@ -1,6 +1,8 @@
 import logger from '@config/logger'
 import { OrderSideEnum } from '@models/enum/OrderSideEnum'
+import { OrderTypeEnum } from '@models/enum/OrderTypeEnum'
 import { RobotStatusEnum } from '@models/enum/RobotStatusEnum'
+import { Order } from '@models/Order'
 import { AppConstants } from '@utils/AppContants'
 import { AppUtils } from '@utils/AppUtils'
 import axios from 'axios'
@@ -14,7 +16,7 @@ const orderService = new OrderService()
 let pairs: any = {}
 const book: any = {}
 
-let robotStatus: RobotStatusEnum = RobotStatusEnum.SEARCHING
+let robotStatus: RobotStatusEnum = RobotStatusEnum.STOPPED
 
 initializeService()
 
@@ -41,42 +43,48 @@ async function initializeService () {
   // logger.info('order 2:', order2)
 }
 
-async function executeStrategy (type: 'BSS' | 'BBS', symbols: string[]) {
+async function executeStrategy (type: 'BSS' | 'BBS', symbols: any[]) {
   try {
     if (robotStatus !== RobotStatusEnum.STOPPED && robotStatus !== RobotStatusEnum.TRADING) {
       robotStatus = RobotStatusEnum.TRADING
-      logger.info(`##### INICIANDO ESTRATÉGIA DE TRIANGULAÇÃO - ${type} ${symbols.join(' > ')} #####`)
+      logger.info(`##### INICIANDO ESTRATÉGIA DE TRIANGULAÇÃO - ${type} ${symbols.map(i => i.symbol).join(' > ')} #####`)
       // ORDER 1
-      logger.info(`EXECUTANDO TRANSAÇÃO 1: BUY ${symbols[0]}`)
+      logger.info(`EXECUTANDO TRANSAÇÃO 1: BUY ${symbols[0].symbol}`)
       const newOrder1 = {
-        symbol: symbols[0],
-        quantity: AppConstants.AMOUNT,
+        type: OrderTypeEnum.LIMIT,
+        price: symbols[0].price,
+        symbol: symbols[0].symbol,
+        quantity: symbols[0].quantity.toFixed(5),
         side: OrderSideEnum.BUY
       }
       // await AppUtils.sleep(5)
       const order1: any = await orderService.newOrder(newOrder1)
-      logger.info('ORDER 1', order1)
+      logger.info('ORDER 1', JSON.stringify(order1))
       // ORDER 2
       const transactionType = (type === 'BBS') ? OrderSideEnum.BUY : OrderSideEnum.SELL
-      logger.info(`EXECUTANDO TRANSAÇÃO 2: ${transactionType} ${symbols[1]}`)
+      logger.info(`EXECUTANDO TRANSAÇÃO 2: ${transactionType} ${symbols[1].symbol}`)
       const newOrder2 = {
-        symbol: symbols[1],
-        quantity: order1.fills?.[0].qty,
+        type: OrderTypeEnum.LIMIT,
+        price: symbols[1].price,
+        symbol: symbols[1].symbol,
+        quantity: symbols[1].quantity?.toFixed(5) || Number(order1.fills?.[0].qty).toFixed(5),
         side: transactionType
       }
       // await AppUtils.sleep(5)
       const order2: any = await orderService.newOrder(newOrder2)
-      logger.info('ORDER 2', order2)
+      logger.info('ORDER 2', JSON.stringify(order2))
       // ORDER 3
-      logger.info(`EXECUTANDO TRANSAÇÃO 3: SELL ${symbols[2]}`)
+      logger.info(`EXECUTANDO TRANSAÇÃO 3: SELL ${symbols[2].symbol}`)
       const newOrder3 = {
-        symbol: symbols[2],
-        quantity: order2.fills?.[0].qty,
+        type: OrderTypeEnum.LIMIT,
+        price: symbols[2].price,
+        symbol: symbols[2].symbol,
+        quantity: Number(order1.fills?.[0].qty).toFixed(5),
         side: OrderSideEnum.SELL
       }
       // await AppUtils.sleep(5)
       const order3: any = await orderService.newOrder(newOrder3)
-      logger.info('ORDER 3', order3)
+      logger.info('ORDER 3', JSON.stringify(order3))
       NotificationService.playSound(NotificationSoundType.COMPLETED)
       logger.info('##################### ESPERAR 1 MINUTO #####################')
       await AppUtils.sleep(60)
@@ -110,11 +118,12 @@ function createWebSocket () {
 }
 
 async function processBuyBuySell () {
-  // logger.info(new Date().toLocaleString())
+  logger.info(new Date().toLocaleString())
   pairs?.buyBuySell?.combinations?.forEach(async (candidate: any) => {
     // buy1
     let priceBuy1 = book[candidate.buy1.symbol]
     priceBuy1 = priceBuy1?.ask
+    // TODO quantas aunidades dá pra comprar com o AMOUNT que eu desejo diponibilizar para a triangulação??
     // buy2
     let priceBuy2 = book[candidate.buy2.symbol]
     priceBuy2 = priceBuy2?.ask
@@ -124,9 +133,26 @@ async function processBuyBuySell () {
     // profitability strategy
     const crossRate = (1 / priceBuy1) * (1 / priceBuy2) * priceSell
     if (crossRate > AppConstants.PROFITABILITY && priceBuy1 && priceBuy2 && priceSell) {
-      const symbols = [candidate.buy1.symbol, candidate.buy2.symbol, candidate.sell.symbol]
+      const qty1 = AppConstants.AMOUNT / priceBuy1 // a primeira quantidade é do par com a moeda que eu já tenho
+      const qty2 = qty1 / priceBuy2 // a segunda quantidade é de acordo com o par da segunda operação
+      const qty3 = qty2 // nesse caso a conta é: quantidade da moeda da segunda operação pela moeda par da terceira operação
+      const symbols = [
+        {
+          symbol: candidate.buy1.symbol,
+          quantity: qty1,
+          price: priceBuy1
+        }, {
+          symbol: candidate.buy2.symbol,
+          quantity: qty2,
+          price: priceBuy2
+        }, {
+          symbol: candidate.sell.symbol,
+          quantity: qty3,
+          price: priceSell
+        }
+      ]
       NotificationService.playSound(NotificationSoundType.FOUND)
-      logger.info(`Oportunidade BBS em ${symbols.join(' > ')} = ${crossRate}.`)
+      logger.info(`Oportunidade BBS em ${symbols.map(i => i.symbol).join(' > ')} = ${crossRate}.`)
       logger.info(`Inicial: ${AppConstants.QUOTE} ${AppConstants.AMOUNT}, Final ${AppConstants.QUOTE} ${((AppConstants.AMOUNT / priceBuy1) / priceBuy2) * priceSell}`)
       await executeStrategy('BBS', symbols)
     }
@@ -134,23 +160,41 @@ async function processBuyBuySell () {
 }
 
 async function processBuySellSell () {
-  // logger.info(new Date().toLocaleString())
+  logger.info(new Date().toLocaleString())
   pairs?.buySellSell?.combinations?.forEach(async (candidate: any) => {
+    const qty1 = AppConstants.AMOUNT / priceBuy // a primeira quantidade é do par com a moeda que eu já tenho
+    const qty2 = qty1 // a segunda quantidade é de acordo com o par da segunda operação
+    const qty3 = qty2 / priceSell1 // nesse caso a conta é: quantidade da moeda da segunda operação pela moeda par da terceira operação
+    const symbols = [
+      {
+        symbol: candidate.buy.symbol,
+        quantity: qty1,
+        price: book[candidate.buy.symbol]?.ask
+      }, {
+        symbol: candidate.sell1.symbol,
+        quantity: qty2,
+        price: book[candidate.sell1.symbol]?.ask
+      }, {
+        symbol: candidate.sell2.symbol,
+        quantity: qty3,
+        price: book[candidate.sell2.symbol].bid
+      }
+    ]
     // buy1
-    let priceBuy = book[candidate.buy.symbol]
+    let priceBuy = 
     priceBuy = priceBuy?.ask
     // buy2
-    let priceSell1 = book[candidate.sell1.symbol]
-    priceSell1 = priceSell1?.ask
+    let priceSell1 = 
+    priceSell1 = priceSell1?.bid
     // buy1
-    let priceSell2 = book[candidate.sell2.symbol]
+    let priceSell2 = 
     priceSell2 = priceSell2?.bid
     // profitability strategy
     const crossRate = (1 / priceBuy) * priceSell1 * priceSell2
+    const canBeTraded = this.canBeTraded(symbol)
     if (crossRate > AppConstants.PROFITABILITY && priceBuy && priceSell1 && priceSell2) {
-      const symbols = [candidate.buy.symbol, candidate.sell1.symbol, candidate.sell2.symbol]
       NotificationService.playSound(NotificationSoundType.FOUND)
-      logger.info(`Oportunidade BSS em ${symbols.join(' > ')} = ${crossRate}.`)
+      logger.info(`Oportunidade BSS em ${symbols.map(i => i.symbol).join(' > ')} = ${crossRate}.`)
       logger.info(`Inicial: ${AppConstants.QUOTE} ${AppConstants.AMOUNT}, Final: ${AppConstants.QUOTE} ${(AppConstants.AMOUNT / priceBuy) * priceSell1 * priceSell2}`)
       await executeStrategy('BSS', symbols)
     }
@@ -166,7 +210,7 @@ export class RobotService {
     return book
   }
 
-  getRobotStatus() {
+  getRobotStatus () {
     return robotStatus
   }
 
@@ -252,11 +296,23 @@ export class RobotService {
     return buyBuySell
   }
 
+  /**
+   * Whether can the symbol be traded.
+   * @returns boolean
+   */
+  private canBeTraded (symbol: any): boolean {
+    // verificar se a quantidade desejada está igual ou acima do mínimo permitido para trade
+    if (symbol.quantity >= pairs[symbol].min) {
+      return true
+    }
+    return false
+  }
+
   /*************
    * WEB SOCKET
    *************/
 
-  processBuyBuySell () {
+  /* processBuyBuySell () {
     pairs?.buyBuySell?.combinations?.forEach((candidate: any) => {
       // buy1
       let priceBuy1 = book[candidate.buy1.symbol]
@@ -273,5 +329,5 @@ export class RobotService {
         logger.info(`Oportunidade em ${candidate.buy1.symbol} > ${candidate.buy2.symbol} > ${candidate.sell.symbol}.`)
       }
     })
-  }
+  } */
 }
