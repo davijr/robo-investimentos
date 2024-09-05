@@ -8,7 +8,7 @@
     <hr><br>
     <div class="row" *ngIf="accountInfo$ | async as accountInfo; else loadingAccountInfo">
         <h3 *ngIf="accountInfo.length === 0">Nothing to show.</h3>
-        <div class="col col-3" *ngFor="let balance of accountInfo?.balances">
+        <div class="col col-2" *ngFor="let balance of accountInfo?.balances">
             <mat-card>
                 <mat-card-header>
                     <mat-card-title><b>ASSET: </b>{{ balance?.asset }}</mat-card-title>

@@ -48,6 +48,16 @@ export class PanelComponent implements OnInit {
 
   onRefreshHistory () {
     this.orderHistory$ = this.orderService.getHistory().pipe(
+      tap(accountInfo => {
+        // const assets = this.accountInfo?.balances?.map((balance: any) => {
+        //   return balance.asset
+        // })
+        // TODO get prices for each asset
+        // this.robotService.getPrices(assets).subscribe((prices: any) => {
+        //   this.prices = prices
+        //   this.loading = false
+        // }, (e: any) => this.handleError(e))
+      }),
       catchError(async e => {
         this.handleError(e)
         return of([])

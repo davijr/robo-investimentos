@@ -19,7 +19,6 @@ import { RobotService } from '@services/RobotService'
   // get process pairs
   robotService.processPairs()
   robotService.processBuyBuySell()
-
 })()
 
 const app = express()

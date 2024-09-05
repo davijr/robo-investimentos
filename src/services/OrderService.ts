@@ -78,7 +78,8 @@ export class OrderService {
       })
       return symbols
     } catch (e: any) {
-      logger.error('Ocorreu um erro ao obter pares de símbolos.', e)
+      logger.error('Ocorreu um erro ao obter pares de símbolos.')
+      logger.error(e)
       return []
     }
   }

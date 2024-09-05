@@ -112,13 +112,13 @@ function createWebSocket () {
         }
       })
       processBuyBuySell()
-      processBuySellSell()
+      processBuySellSell(null, null, null)
     }
   })
 }
 
 async function processBuyBuySell () {
-  logger.info(new Date().toLocaleString())
+  logger.info('processBuyBuySell()' + new Date().toLocaleString())
   pairs?.buyBuySell?.combinations?.forEach(async (candidate: any) => {
     // buy1
     let priceBuy1 = book[candidate.buy1.symbol]
@@ -159,12 +159,12 @@ async function processBuyBuySell () {
   })
 }
 
-async function processBuySellSell () {
-  logger.info(new Date().toLocaleString())
+async function processBuySellSell (priceBuyParam: any, priceSell1Param: any, priceSell2Param: any) {
+  logger.info('processBuySellSell() ' + new Date().toLocaleString())
   pairs?.buySellSell?.combinations?.forEach(async (candidate: any) => {
-    const qty1 = AppConstants.AMOUNT / priceBuy // a primeira quantidade é do par com a moeda que eu já tenho
+    const qty1 = AppConstants.AMOUNT / priceBuyParam // a primeira quantidade é do par com a moeda que eu já tenho
     const qty2 = qty1 // a segunda quantidade é de acordo com o par da segunda operação
-    const qty3 = qty2 / priceSell1 // nesse caso a conta é: quantidade da moeda da segunda operação pela moeda par da terceira operação
+    const qty3 = qty2 / priceSell1Param // nesse caso a conta é: quantidade da moeda da segunda operação pela moeda par da terceira operação
     const symbols = [
       {
         symbol: candidate.buy.symbol,
@@ -180,18 +180,20 @@ async function processBuySellSell () {
         price: book[candidate.sell2.symbol].bid
       }
     ]
+    // TODO ñ sei o q tá acontecendo aqui
+    const priceBuy = priceBuyParam
+    const priceSell1 = priceSell1Param
+    const priceSell2 = priceSell2Param
+
     // buy1
-    let priceBuy = 
-    priceBuy = priceBuy?.ask
+    // let priceBuy = priceBuy = priceBuy?.ask
     // buy2
-    let priceSell1 = 
-    priceSell1 = priceSell1?.bid
+    // let priceSell1 = priceSell1Param = priceSell1?.bid
     // buy1
-    let priceSell2 = 
-    priceSell2 = priceSell2?.bid
+    // let priceSell2 = priceSell1Param = priceSell2?.bid
     // profitability strategy
     const crossRate = (1 / priceBuy) * priceSell1 * priceSell2
-    const canBeTraded = this.canBeTraded(symbol)
+    // const canBeTraded = this.canBeTraded(symbols)
     if (crossRate > AppConstants.PROFITABILITY && priceBuy && priceSell1 && priceSell2) {
       NotificationService.playSound(NotificationSoundType.FOUND)
       logger.info(`Oportunidade BSS em ${symbols.map(i => i.symbol).join(' > ')} = ${crossRate}.`)
@@ -312,22 +314,22 @@ export class RobotService {
    * WEB SOCKET
    *************/
 
-  /* processBuyBuySell () {
-    pairs?.buyBuySell?.combinations?.forEach((candidate: any) => {
-      // buy1
-      let priceBuy1 = book[candidate.buy1.symbol]
-      priceBuy1 = priceBuy1.ask
-      // buy2
-      let priceBuy2 = book[candidate.buy2.symbol]
-      priceBuy2 = priceBuy1.ask
-      // buy1
-      let priceSell = book[candidate.sell.symbol]
-      priceSell = priceSell.bid
-      // profitability strategy
-      const crossRate = (1 / priceBuy1) * (1 / priceBuy2) * priceSell
-      if (crossRate > AppConstants.PROFITABILITY && priceBuy1 && priceBuy2 && priceSell) {
-        logger.info(`Oportunidade em ${candidate.buy1.symbol} > ${candidate.buy2.symbol} > ${candidate.sell.symbol}.`)
-      }
-    })
-  } */
+  processBuyBuySell () {
+    // pairs?.buyBuySell?.combinations?.forEach((candidate: any) => {
+    //   // buy1
+    //   let priceBuy1 = book[candidate.buy1.symbol]
+    //   priceBuy1 = priceBuy1.ask
+    //   // buy2
+    //   let priceBuy2 = book[candidate.buy2.symbol]
+    //   priceBuy2 = priceBuy1.ask
+    //   // buy1
+    //   let priceSell = book[candidate.sell.symbol]
+    //   priceSell = priceSell.bid
+    //   // profitability strategy
+    //   const crossRate = (1 / priceBuy1) * (1 / priceBuy2) * priceSell
+    //   if (crossRate > AppConstants.PROFITABILITY && priceBuy1 && priceBuy2 && priceSell) {
+    //     logger.info(`Oportunidade em ${candidate.buy1.symbol} > ${candidate.buy2.symbol} > ${candidate.sell.symbol}.`)
+    //   }
+    // })
+  }
 }
