@@ -1,34 +1,56 @@
-import '@config/environment'
-import { database } from '@config/database'
-import logger from '@config/logger'
-import bodyParser from 'body-parser'
-import express from 'express'
-import mountRoutes from './routes'
-import { RobotService } from '@services/RobotService'
+import '@config/environment';
+import logger from '@config/logger';
+import { ExchangeService } from '@services/ExchangeService';
+import { RobotService } from '@services/RobotService';
+import bodyParser from 'body-parser';
+import express from 'express';
+import mongoose from 'mongoose';
+import mountRoutes from './routes';
+
+const app = express();
+
+// TODO removi outras funções e foquei somente na conexão com o MongoDB e criação dos dados da Exchange
 
 (async () => {
-  const robotService = new RobotService()
+  serveStaticFiles();
+  await initDatabase();
+  initRobot();
+})()
 
+async function initRobot() {
+  const robotService = new RobotService()
+  // JobQueue.run()
+  // get process pairs
+  robotService.processPairs()
+  // robotService.processBuyBuySell()
+}
+
+async function initDatabase() {
   try {
-    await database.sync({ force: true })
+    mongoose.connect(`${process.env.MONGODB_URL}`);
+    const exchangeService = new ExchangeService();
+    await exchangeService.getUpdateExchange();
   } catch (error) {
     logger.error(error)
   }
-  // JobQueue.run()
 
-  // get process pairs
-  robotService.processPairs()
-  robotService.processBuyBuySell()
-})()
+  // sequelize - sqlite
+  // try {
+  //   await database.sync({ force: true })
+  // } catch (error) {
+  //   logger.error(error)
+  // }
+}
 
-const app = express()
-app.use(bodyParser.json())
-app.use(express.static(`${process.cwd()}/robot-app/dist/app`))
+function serveStaticFiles() {
+  app.use(bodyParser.json())
+  app.use(express.static(`${process.cwd()}/robot-app/dist/app`))
 
-app.get('/', (req, res) => {
-  res.sendFile(`${process.cwd()}/robot-app/dist/app/index.html`)
-})
+  app.get('/', (req, res) => {
+    res.sendFile(`${process.cwd()}/robot-app/dist/app/index.html`)
+  })
 
-mountRoutes(app)
+  mountRoutes(app)
+}
 
 export default app

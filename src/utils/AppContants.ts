@@ -5,7 +5,7 @@ export class AppConstants {
     static readonly API_KEY = process.env.API_KEY
     static readonly API_SECRET = process.env.API_SECRET
     static readonly URL_STREAM = `${this.API_URL_STREAM}/!ticker@arr`
-    static readonly URL_EXCHANGE_INFO = `${this.API_URL}/v3/exchangeInfo`
+    static readonly URL_EXCHANGE_INFO = '/v3/exchangeInfo';
     // aim
     static readonly QUOTE = 'USDT'
     static readonly PROFITABILITY = 1.005 // 1.003 está considerando as taxas em todas as operações

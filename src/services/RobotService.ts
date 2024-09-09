@@ -1,7 +1,7 @@
 import logger from '@config/logger'
-import { OrderSideEnum } from '@models/enum/OrderSideEnum'
-import { OrderTypeEnum } from '@models/enum/OrderTypeEnum'
-import { RobotStatusEnum } from '@models/enum/RobotStatusEnum'
+import { OrderSideEnum } from '../enum/OrderSideEnum'
+import { OrderTypeEnum } from '../enum/OrderTypeEnum'
+import { RobotStatusEnum } from '../enum/RobotStatusEnum'
 import { Order } from '@models/Order'
 import { AppConstants } from '@utils/AppContants'
 import { AppUtils } from '@utils/AppUtils'
@@ -9,8 +9,10 @@ import axios from 'axios'
 import WebSocket from 'ws'
 import { NotificationService, NotificationSoundType } from './NotificationService'
 import { OrderService } from './OrderService'
+import { ExchangeService } from './ExchangeService'
 
 const orderService = new OrderService()
+const exchangeService = new ExchangeService()
 
 // TODO move variables to database (maybe)
 let pairs: any = {}
@@ -20,7 +22,7 @@ let robotStatus: RobotStatusEnum = RobotStatusEnum.STOPPED
 
 initializeService()
 
-async function initializeService () {
+async function initializeService() {
   createWebSocket()
 
   // TODO some tests
@@ -43,7 +45,7 @@ async function initializeService () {
   // logger.info('order 2:', order2)
 }
 
-async function executeStrategy (type: 'BSS' | 'BBS', symbols: any[]) {
+async function executeStrategy(type: 'BSS' | 'BBS', symbols: any[]) {
   try {
     if (robotStatus !== RobotStatusEnum.STOPPED && robotStatus !== RobotStatusEnum.TRADING) {
       robotStatus = RobotStatusEnum.TRADING
@@ -99,7 +101,7 @@ async function executeStrategy (type: 'BSS' | 'BBS', symbols: any[]) {
   }
 }
 
-function createWebSocket () {
+function createWebSocket() {
   const ws = new WebSocket(AppConstants.URL_STREAM)
   ws.on('message', async (event: any) => {
     if (robotStatus !== RobotStatusEnum.STOPPED && robotStatus !== RobotStatusEnum.TRADING) {
@@ -117,7 +119,7 @@ function createWebSocket () {
   })
 }
 
-async function processBuyBuySell () {
+async function processBuyBuySell() {
   logger.info('processBuyBuySell()' + new Date().toLocaleString())
   pairs?.buyBuySell?.combinations?.forEach(async (candidate: any) => {
     // buy1
@@ -159,7 +161,7 @@ async function processBuyBuySell () {
   })
 }
 
-async function processBuySellSell (priceBuyParam: any, priceSell1Param: any, priceSell2Param: any) {
+async function processBuySellSell(priceBuyParam: any, priceSell1Param: any, priceSell2Param: any) {
   logger.info('processBuySellSell() ' + new Date().toLocaleString())
   pairs?.buySellSell?.combinations?.forEach(async (candidate: any) => {
     const qty1 = AppConstants.AMOUNT / priceBuyParam // a primeira quantidade é do par com a moeda que eu já tenho
@@ -204,15 +206,15 @@ async function processBuySellSell (priceBuyParam: any, priceSell1Param: any, pri
 }
 
 export class RobotService {
-  getPairs () {
+  getPairs() {
     return pairs
   }
 
-  getBook () {
+  getBook() {
     return book
   }
 
-  getRobotStatus () {
+  getRobotStatus() {
     return robotStatus
   }
 
@@ -220,7 +222,7 @@ export class RobotService {
     robotStatus = status
   }
 
-  getPrices (assets = []) {
+  getPrices(assets = []) {
     const prices: any = []
     assets.forEach(asset => {
       const symbol = asset + AppConstants.QUOTE
@@ -235,9 +237,9 @@ export class RobotService {
     return prices
   }
 
-  async processPairs () {
+  async processPairs() {
     try {
-      const allSymbols: any = await this.getExchangeInfo()
+      const allSymbols: any = await exchangeService.getUpdateExchange();
       const buySymbols = allSymbols.filter((symbol: any) => symbol.quote === AppConstants.QUOTE)
       const buyBuySell = this.getBuyBuySell(allSymbols, buySymbols)
       const buySellSell = this.getBuySellSell(allSymbols, buySymbols)
@@ -258,19 +260,7 @@ export class RobotService {
     }
   }
 
-  private async getExchangeInfo () {
-    const response = await axios.get(AppConstants.URL_EXCHANGE_INFO)
-    return response.data?.symbols?.filter((symbol: any) => symbol.status === 'TRADING')
-      .map((symbol: any) => {
-        return {
-          symbol: symbol.symbol,
-          base: symbol.baseAsset,
-          quote: symbol.quoteAsset
-        }
-      })
-  }
-
-  private getBuyBuySell (allSymbols: any, buySymbols: any) {
+  private getBuyBuySell(allSymbols: any, buySymbols: any) {
     const buyBuySell: any[] = []
     buySymbols.forEach((buy1: any) => {
       const right = allSymbols.filter((s: any) => s.quote === buy1.base)
@@ -284,7 +274,7 @@ export class RobotService {
     return buyBuySell
   }
 
-  private getBuySellSell (allSymbols: any, buySymbols: any) {
+  private getBuySellSell(allSymbols: any, buySymbols: any) {
     const buyBuySell: any[] = []
     buySymbols.forEach((buy: any) => {
       const right = allSymbols.filter((s: any) => s.base === buy.base && s.quote !== buy.quote)
@@ -302,7 +292,7 @@ export class RobotService {
    * Whether can the symbol be traded.
    * @returns boolean
    */
-  private canBeTraded (symbol: any): boolean {
+  private canBeTraded(symbol: any): boolean {
     // verificar se a quantidade desejada está igual ou acima do mínimo permitido para trade
     if (symbol.quantity >= pairs[symbol].min) {
       return true
@@ -314,7 +304,7 @@ export class RobotService {
    * WEB SOCKET
    *************/
 
-  processBuyBuySell () {
+  processBuyBuySell() {
     // pairs?.buyBuySell?.combinations?.forEach((candidate: any) => {
     //   // buy1
     //   let priceBuy1 = book[candidate.buy1.symbol]

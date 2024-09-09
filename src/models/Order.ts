@@ -1,5 +1,5 @@
-import { OrderSideEnum } from './enum/OrderSideEnum'
-import { OrderTypeEnum } from './enum/OrderTypeEnum'
+import { OrderSideEnum } from '../enum/OrderSideEnum'
+import { OrderTypeEnum } from '../enum/OrderTypeEnum'
 
 export class Order {
     symbol: string

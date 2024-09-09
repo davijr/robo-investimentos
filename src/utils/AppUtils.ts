@@ -60,6 +60,10 @@ export class AppUtils {
     return moment().diff(date, 'day')
   }
 
+  public static diffMinutes (date: Date): number {
+    return moment().diff(date, 'minutes')
+  }
+
   public static extractErrorMessage(e: any): string {
     let message = e.response?.data?.msg
     message = message || e.message

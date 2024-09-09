@@ -1,12 +1,14 @@
 import logger from '@config/logger'
-import { OrderTypeEnum } from '@models/enum/OrderTypeEnum'
+import { OrderTypeEnum } from '../enum/OrderTypeEnum'
 import { Order } from '@models/Order'
 import { AppConstants } from '@utils/AppContants'
 import { AppUtils } from '@utils/AppUtils'
 import axios from 'axios'
 import { BinanceApi } from './BinanceApi'
+import { ExchangeService } from './ExchangeService'
 
 const binance = new BinanceApi()
+const exchangeService = new ExchangeService();
 
 export class OrderService {
   private orderUrl = '/v3/order'
@@ -61,7 +63,7 @@ export class OrderService {
 
   private async getPairs (): Promise<any[]> {
     try {
-      const allSymbols: any = await this.getExchangeInfo()
+      const allSymbols: any = await exchangeService.getExchangeInfoApi();
       const buySymbols = allSymbols.filter((symbol: any) => symbol.quote === AppConstants.QUOTE)
       const buyBuySell = this.getBuyBuySell(allSymbols, buySymbols)
       const buySellSell = this.getBuySellSell(allSymbols, buySymbols)
@@ -112,15 +114,15 @@ export class OrderService {
     return buyBuySell
   }
 
-  private async getExchangeInfo () {
-    const response = await axios.get(AppConstants.URL_EXCHANGE_INFO)
-    return response.data?.symbols?.filter((symbol: any) => symbol.status === 'TRADING')
-      .map((symbol: any) => {
-        return {
-          symbol: symbol.symbol,
-          base: symbol.baseAsset,
-          quote: symbol.quoteAsset
-        }
-      })
-  }
+  // private async getExchangeInfo () {
+  //   const response = await axios.get(AppConstants.URL_EXCHANGE_INFO)
+  //   return response.data?.symbols?.filter((symbol: any) => symbol.status === 'TRADING')
+  //     .map((symbol: any) => {
+  //       return {
+  //         symbol: symbol.symbol,
+  //         base: symbol.baseAsset,
+  //         quote: symbol.quoteAsset
+  //       }
+  //     })
+  // }
 }
