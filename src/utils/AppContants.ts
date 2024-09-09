@@ -8,6 +8,6 @@ export class AppConstants {
     static readonly URL_EXCHANGE_INFO = '/v3/exchangeInfo';
     // aim
     static readonly QUOTE = 'USDT'
-    static readonly PROFITABILITY = 1.005 // 1.003 está considerando as taxas em todas as operações
+    static readonly PROFITABILITY = 1.0075 // 1.003 está considerando as taxas em todas as operações
     static readonly AMOUNT = 20 // qtd a ser negociada
 }

@@ -6,6 +6,7 @@ import bodyParser from 'body-parser';
 import express from 'express';
 import mongoose from 'mongoose';
 import mountRoutes from './routes';
+import JobQueue from './jobs/JobQueue';
 
 const app = express();
 
@@ -19,9 +20,10 @@ const app = express();
 
 async function initRobot() {
   const robotService = new RobotService()
-  // JobQueue.run()
+  robotService.init();
+  // JobQueue.run();
   // get process pairs
-  robotService.processPairs()
+  // robotService.processPairs()
   // robotService.processBuyBuySell()
 }
 

@@ -10,17 +10,211 @@ import WebSocket from 'ws'
 import { NotificationService, NotificationSoundType } from './NotificationService'
 import { OrderService } from './OrderService'
 import { ExchangeService } from './ExchangeService'
+import Oportunity from '@schemas/Oportunity'
+import { OportunityService } from './OportunityService'
+
+export class RobotService {
+  pairs: any = {};
+  book: any = {};
+
+  // inject
+  oportunityService = new OportunityService();
+
+  async init() {
+    await this.processPairs();
+    this.createWebSocket(async (event: any) => {
+      if (robotStatus !== RobotStatusEnum.STOPPED && robotStatus !== RobotStatusEnum.TRADING) {
+        robotStatus = RobotStatusEnum.SEARCHING
+        const obj = JSON.parse(event?.toString())
+        obj.forEach((element: any) => {
+          this.book[element.s] = {
+            ask: parseFloat(element.a),
+            bid: parseFloat(element.b)
+          }
+        })
+        this.processBuyBuySell();
+        // processBuySellSell(null, null, null)
+      }
+    });
+  }
+
+  getRobotStatus() {
+    return robotStatus
+  }
+
+  setRobotStatus(status: RobotStatusEnum) {
+    robotStatus = status
+  }
+
+  getPairs() {
+    return this.pairs;
+  }
+
+  getBook() {
+    return this.book;
+  }
+
+  getPrices(assets = []) {
+    const prices: any = []
+    assets.forEach(asset => {
+      const symbol = asset + AppConstants.QUOTE
+      const price = this.book[symbol]
+      if (price) {
+        prices.push({
+          asset,
+          ...price
+        })
+      }
+    })
+    return prices
+  }
+
+  async processPairs() {
+    try {
+      const allSymbols: any = await exchangeService.getUpdateExchange();
+      const buySymbols = allSymbols.filter((symbol: any) => symbol.quote === AppConstants.QUOTE)
+      const buyBuySell = this.getBuyBuySell(allSymbols, buySymbols)
+      const buySellSell = this.getBuySellSell(allSymbols, buySymbols)
+      this.pairs = {
+        size: allSymbols?.length,
+        buyBuySell: {
+          size: buyBuySell.length,
+          combinations: buyBuySell
+        },
+        buySellSell: {
+          size: buySellSell.length,
+          combinations: buySellSell
+        }
+      }
+      logger.info(`Foram encontrados ${this.pairs.size} pares disponíveis para triangulação.`)
+    } catch (e: any) {
+      logger.error('Ocorreu um erro ao obter pares de símbolos.', AppUtils.extractErrorMessage(e))
+    }
+  }
+
+  private getBuyBuySell(allSymbols: any, buySymbols: any) {
+    const buyBuySell: any[] = []
+    buySymbols.forEach((buy1: any) => {
+      const right = allSymbols.filter((s: any) => s.quote === buy1.base)
+      right.forEach((buy2: any) => {
+        const sell = allSymbols.find((s: any) => s.base === buy2.base && s.quote === buy1.quote)
+        if (sell) {
+          buyBuySell.push({ buy1, buy2, sell })
+        }
+      })
+    })
+    return buyBuySell
+  }
+
+  private getBuySellSell(allSymbols: any, buySymbols: any) {
+    const buyBuySell: any[] = []
+    buySymbols.forEach((buy: any) => {
+      const right = allSymbols.filter((s: any) => s.base === buy.base && s.quote !== buy.quote)
+      right.forEach((sell1: any) => {
+        const sell2 = allSymbols.find((s: any) => s.base === sell1.quote && s.quote === buy.quote)
+        if (sell2) {
+          buyBuySell.push({ buy, sell1, sell2 })
+        }
+      })
+    })
+    return buyBuySell
+  }
+
+  /**
+   * Whether can the symbol be traded.
+   * @returns boolean
+   */
+  private canBeTraded(symbol: any): boolean {
+    // verificar se a quantidade desejada está igual ou acima do mínimo permitido para trade
+    if (symbol.quantity >= this.pairs[symbol].min) {
+      return true
+    }
+    return false
+  }
+
+  /*************
+   * WEB SOCKET
+   *************/
+
+  private createWebSocket(callback: (event: any) => {}) {
+    const ws = new WebSocket(AppConstants.URL_STREAM);
+    ws.on('open', () => logger.info('Cliente WebSocket foi iniciado.'));
+    ws.on('message', callback);
+  }
+
+  processBuyBuySellOld() {
+    this.pairs?.buyBuySell?.combinations?.forEach((candidate: any) => {
+      // buy1
+      let priceBuy1 = this.book[candidate.buy1.symbol]
+      priceBuy1 = priceBuy1.ask
+      // buy2
+      let priceBuy2 = this.book[candidate.buy2.symbol]
+      priceBuy2 = priceBuy1.ask
+      // buy1
+      let priceSell = this.book[candidate.sell.symbol]
+      priceSell = priceSell.bid
+      // profitability strategy
+      const crossRate = (1 / priceBuy1) * (1 / priceBuy2) * priceSell
+      if (crossRate > AppConstants.PROFITABILITY && priceBuy1 && priceBuy2 && priceSell) {
+        logger.info(`Oportunidade em ${candidate.buy1.symbol} > ${candidate.buy2.symbol} > ${candidate.sell.symbol}.`);
+      }
+    })
+  }
+
+  async processBuyBuySell() {
+    logger.info('processBuyBuySell() ' + new Date().toLocaleString());
+    this.pairs?.buyBuySell?.combinations?.forEach(async (candidate: any) => {
+      // buy1
+      let priceBuy1 = this.book[candidate.buy1.symbol]
+      priceBuy1 = priceBuy1?.ask
+      // TODO quantas aunidades dá pra comprar com o AMOUNT que eu desejo diponibilizar para a triangulação??
+      // buy2
+      let priceBuy2 = this.book[candidate.buy2.symbol]
+      priceBuy2 = priceBuy2?.ask
+      // buy1
+      let priceSell = this.book[candidate.sell.symbol]
+      priceSell = priceSell?.bid
+      // profitability strategy
+      const crossRate = (1 / priceBuy1) * (1 / priceBuy2) * priceSell
+      if (crossRate > AppConstants.PROFITABILITY && priceBuy1 && priceBuy2 && priceSell) {
+        const qty1 = AppConstants.AMOUNT / priceBuy1 // a primeira quantidade é do par com a moeda que eu já tenho
+        const qty2 = qty1 / priceBuy2 // a segunda quantidade é de acordo com o par da segunda operação
+        const qty3 = qty2 // nesse caso a conta é: quantidade da moeda da segunda operação pela moeda par da terceira operação
+        const symbols = [
+          {
+            symbol: candidate.buy1.symbol,
+            quantity: qty1,
+            price: priceBuy1
+          }, {
+            symbol: candidate.buy2.symbol,
+            quantity: qty2,
+            price: priceBuy2
+          }, {
+            symbol: candidate.sell.symbol,
+            quantity: qty3,
+            price: priceSell
+          }
+        ]
+        NotificationService.playSound(NotificationSoundType.FOUND);
+        // await executeStrategy('BBS', symbols);
+        this.oportunityService.saveUpdate('BBS', symbols, crossRate);
+      }
+    })
+  }
+}
+
+// ####################################################
 
 const orderService = new OrderService()
 const exchangeService = new ExchangeService()
 
 // TODO move variables to database (maybe)
-let pairs: any = {}
+let pairs: any = [];
 const book: any = {}
 
-let robotStatus: RobotStatusEnum = RobotStatusEnum.STOPPED
+let robotStatus: RobotStatusEnum = RobotStatusEnum.ACTIVE
 
-initializeService()
+// initializeService()
 
 async function initializeService() {
   createWebSocket()
@@ -203,123 +397,4 @@ async function processBuySellSell(priceBuyParam: any, priceSell1Param: any, pric
       await executeStrategy('BSS', symbols)
     }
   })
-}
-
-export class RobotService {
-  getPairs() {
-    return pairs
-  }
-
-  getBook() {
-    return book
-  }
-
-  getRobotStatus() {
-    return robotStatus
-  }
-
-  setRobotStatus(status: RobotStatusEnum) {
-    robotStatus = status
-  }
-
-  getPrices(assets = []) {
-    const prices: any = []
-    assets.forEach(asset => {
-      const symbol = asset + AppConstants.QUOTE
-      const price = book[symbol]
-      if (price) {
-        prices.push({
-          asset,
-          ...price
-        })
-      }
-    })
-    return prices
-  }
-
-  async processPairs() {
-    try {
-      const allSymbols: any = await exchangeService.getUpdateExchange();
-      const buySymbols = allSymbols.filter((symbol: any) => symbol.quote === AppConstants.QUOTE)
-      const buyBuySell = this.getBuyBuySell(allSymbols, buySymbols)
-      const buySellSell = this.getBuySellSell(allSymbols, buySymbols)
-      pairs = {
-        size: allSymbols?.length,
-        buyBuySell: {
-          size: buyBuySell.length,
-          combinations: buyBuySell
-        },
-        buySellSell: {
-          size: buySellSell.length,
-          combinations: buySellSell
-        }
-      }
-      logger.info(`Foram encontrados ${pairs.size} pares disponíveis para triangulação.`)
-    } catch (e: any) {
-      logger.error('Ocorreu um erro ao obter pares de símbolos.', AppUtils.extractErrorMessage(e))
-    }
-  }
-
-  private getBuyBuySell(allSymbols: any, buySymbols: any) {
-    const buyBuySell: any[] = []
-    buySymbols.forEach((buy1: any) => {
-      const right = allSymbols.filter((s: any) => s.quote === buy1.base)
-      right.forEach((buy2: any) => {
-        const sell = allSymbols.find((s: any) => s.base === buy2.base && s.quote === buy1.quote)
-        if (sell) {
-          buyBuySell.push({ buy1, buy2, sell })
-        }
-      })
-    })
-    return buyBuySell
-  }
-
-  private getBuySellSell(allSymbols: any, buySymbols: any) {
-    const buyBuySell: any[] = []
-    buySymbols.forEach((buy: any) => {
-      const right = allSymbols.filter((s: any) => s.base === buy.base && s.quote !== buy.quote)
-      right.forEach((sell1: any) => {
-        const sell2 = allSymbols.find((s: any) => s.base === sell1.quote && s.quote === buy.quote)
-        if (sell2) {
-          buyBuySell.push({ buy, sell1, sell2 })
-        }
-      })
-    })
-    return buyBuySell
-  }
-
-  /**
-   * Whether can the symbol be traded.
-   * @returns boolean
-   */
-  private canBeTraded(symbol: any): boolean {
-    // verificar se a quantidade desejada está igual ou acima do mínimo permitido para trade
-    if (symbol.quantity >= pairs[symbol].min) {
-      return true
-    }
-    return false
-  }
-
-  /*************
-   * WEB SOCKET
-   *************/
-
-  processBuyBuySell() {
-    // pairs?.buyBuySell?.combinations?.forEach((candidate: any) => {
-    //   // buy1
-    //   let priceBuy1 = book[candidate.buy1.symbol]
-    //   priceBuy1 = priceBuy1.ask
-    //   // buy2
-    //   let priceBuy2 = book[candidate.buy2.symbol]
-    //   priceBuy2 = priceBuy1.ask
-    //   // buy1
-    //   let priceSell = book[candidate.sell.symbol]
-    //   priceSell = priceSell.bid
-    //   // profitability strategy
-    //   const crossRate = (1 / priceBuy1) * (1 / priceBuy2) * priceSell
-    //   if (crossRate > AppConstants.PROFITABILITY && priceBuy1 && priceBuy2 && priceSell) {
-    //     logger.info(`Oportunidade em ${candidate.buy1.symbol} > ${candidate.buy2.symbol} > ${candidate.sell.symbol}.`)
-    //   }
-    // })
-  }
 }

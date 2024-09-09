@@ -1,6 +1,6 @@
 
 export enum RobotStatusEnum {
-    // ACTIVE = 'ACTIVE',
+    ACTIVE = 'ACTIVE',
     STOPPED = 'STOPPED',
     SEARCHING = 'SEARCHING',
     TRADING = 'TRADING'
