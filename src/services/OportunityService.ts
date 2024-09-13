@@ -25,15 +25,15 @@ export class OportunityService {
     return await oportunity.save();
   }
 
-  public async saveUpdate(strategy: String, symbols: any, crossRate: any) {
+  public async saveUpdate(strategy: string, symbols: any, crossRate: any) {
     const createOportunityKey = `${strategy}_${symbols.map((i: any) => i.symbol).join('_')}_${crossRate}`;
     const findOportunity = await Oportunity.findOne({key: createOportunityKey});
-    logger.info(`Oportunidade BBS em ${createOportunityKey}. ` +
-      `Tempo: ${AppUtils.diff(findOportunity?.firstOffer, findOportunity?.lastOffer, 'seconds')} segundos.`);
-
     if (findOportunity) {
-      findOportunity.lastOffer = new Date().getTime();
-      await findOportunity.save();
+      const duration = AppUtils.diffSec(findOportunity?.firstOffer);
+      findOportunity.duration = duration;
+      findOportunity.save(); // keep async
+      logger.info(`### Oportunidade: strategy: ${strategy}, oportunityKey: ${createOportunityKey}, ` +
+        `duration: ${duration} segundos. ###`);
     } else {
       const oportunitySchema = new Oportunity({
         key: createOportunityKey,
@@ -42,10 +42,16 @@ export class OportunityService {
         pair2: symbols[1].symbol,
         pair3: symbols[2].symbol,
         firstOffer: new Date().getTime(),
-        lastOffer: new Date().getTime()
+        duration: 0,
+        price1: symbols[0].price,
+        price2: symbols[1].price,
+        price3: symbols[2].price,
+        profitability: crossRate
       });
       await oportunitySchema.save();
     }
+
+    // TODO ao criar a tabela Oportunity, criar um index pra a busca ficar mais rápida
   }
 
 }

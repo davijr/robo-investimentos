@@ -64,6 +64,10 @@ export class AppUtils {
     return moment().diff(date, 'minutes')
   }
 
+  public static diffSec (date: any): number {
+    return moment().diff(date, 'seconds');
+  }
+
   public static diff(date1: any, date2: any, type: 'years' | 'days' | 'hours' | 'minutes' | 'seconds'): number {
     return moment(date2).diff(date1, type);
   }

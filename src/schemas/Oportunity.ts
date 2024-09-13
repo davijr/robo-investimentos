@@ -9,8 +9,11 @@ const schema = new mongoose.Schema({
     pair1: String,
     pair2: String,
     pair3: String,
+    price1: Number,
+    price2: Number,
+    price3: Number,
     firstOffer: Number,
-    lastOffer: Number,
+    duration: Number, // seconds
     profitability: Number
 });
 

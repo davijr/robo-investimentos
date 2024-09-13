@@ -1,9 +1,8 @@
 import logger from '@config/logger'
-import { OrderTypeEnum } from '../enum/OrderTypeEnum'
 import { Order } from '@models/Order'
 import { AppConstants } from '@utils/AppContants'
 import { AppUtils } from '@utils/AppUtils'
-import axios from 'axios'
+import { OrderTypeEnum } from '../enum/OrderTypeEnum'
 import { BinanceApi } from './BinanceApi'
 import { ExchangeService } from './ExchangeService'
 
@@ -15,16 +14,19 @@ export class OrderService {
   private orderHistoryUrl = '/v3/myTrades'
 
   async newOrder (order: Order) {
-    order.type = order.type || OrderTypeEnum.MARKET
+    order.type = order.type ?? OrderTypeEnum.MARKET
     if (order.type === OrderTypeEnum.LIMIT) {
       order.timeInForce = 'GTC'
     }
     try {
-      return binance.post(this.orderUrl, order)
+      return await binance.post(this.orderUrl, order)
     } catch (e: any) {
       logger.error('Erro ao efetuar chamada à API Binance.', e.message)
+      return null;
     }
   }
+
+  doFilters() {}
 
   async getHistory () {
     try {

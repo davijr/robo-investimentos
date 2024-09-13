@@ -7,7 +7,8 @@ export class AppConstants {
     static readonly URL_STREAM = `${this.API_URL_STREAM}/!ticker@arr`
     static readonly URL_EXCHANGE_INFO = '/v3/exchangeInfo';
     // aim
-    static readonly QUOTE = 'USDT'
-    static readonly PROFITABILITY = 1.0075 // 1.003 está considerando as taxas em todas as operações
-    static readonly AMOUNT = 20 // qtd a ser negociada
+    static readonly QUOTE = 'USDT';
+    static readonly MIN_DAILY_VOLUME = 1000000; // volume diário mínimo: 1 milhão
+    static readonly PROFITABILITY = 1.01; // 1.003 está considerando as taxas em todas as operações
+    static readonly AMOUNT = 20; // qtd a ser negociada
 }
