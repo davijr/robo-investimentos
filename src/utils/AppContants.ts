@@ -6,9 +6,11 @@ export class AppConstants {
     static readonly API_SECRET = process.env.API_SECRET
     static readonly URL_STREAM = `${this.API_URL_STREAM}/!ticker@arr`
     static readonly URL_EXCHANGE_INFO = '/v3/exchangeInfo';
+    // intervals
+    static readonly MYTRADES_UPDATE_INTERVAL = 5; // 5 minutos
     // aim
     static readonly QUOTE = 'USDT';
     static readonly MIN_DAILY_VOLUME = 1000000; // volume diário mínimo: 1 milhão
-    static readonly PROFITABILITY = 1.01; // 1.003 está considerando as taxas em todas as operações
-    static readonly AMOUNT = 20; // qtd a ser negociada
+    static readonly PROFITABILITY = 1.002; // 1.00075 é a taxa Binance = 0,075% quando tem BNB. Ou 0,1% se não tiver BNB na conta
+    static readonly AMOUNT = 100; // em USDT qtd a ser negociada
 }

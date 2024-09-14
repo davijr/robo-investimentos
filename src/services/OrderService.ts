@@ -5,13 +5,16 @@ import { AppUtils } from '@utils/AppUtils'
 import { OrderTypeEnum } from '../enum/OrderTypeEnum'
 import { BinanceApi } from './BinanceApi'
 import { ExchangeService } from './ExchangeService'
-
-const binance = new BinanceApi()
-const exchangeService = new ExchangeService();
+import { RobotService } from './RobotService'
+import Trade from '@schemas/Trade'
 
 export class OrderService {
   private orderUrl = '/v3/order'
   private orderHistoryUrl = '/v3/myTrades'
+
+  binance = new BinanceApi()
+  exchangeService = new ExchangeService();
+  robotService = new RobotService();
 
   async newOrder (order: Order) {
     order.type = order.type ?? OrderTypeEnum.MARKET
@@ -19,7 +22,7 @@ export class OrderService {
       order.timeInForce = 'GTC'
     }
     try {
-      return await binance.post(this.orderUrl, order)
+      return await this.binance.post(this.orderUrl, order)
     } catch (e: any) {
       logger.error('Erro ao efetuar chamada à API Binance.', e.message)
       return null;
@@ -30,7 +33,8 @@ export class OrderService {
 
   async getHistory () {
     try {
-      const symbols = await this.getPairs()
+      // const symbols = await this.getPairs()
+      const symbols = await this.robotService.getPairs();
       const allHistory: any[] = []
       const calls: any[] = []
       for (let i = 0; i < symbols.length; i++) {
@@ -56,7 +60,16 @@ export class OrderService {
   }
 
   private async getOneHistory (symbol: string) {
-    return binance.get(this.orderHistoryUrl, { symbol })
+    let trades: any = await Trade.findOne();
+    const updateInterval = AppUtils.diffMinutes(trades?.lastUpdate);
+    if (trades && updateInterval < AppConstants.MYTRADES_UPDATE_INTERVAL) {
+      return trades.myTrades;
+    }
+    trades = {};
+    trades.myTrades = await this.binance.get(this.orderHistoryUrl, { symbol });
+    trades.lastUpdate = new Date().getTime();
+    await trades.save();
+    return trades.myTrades;
   }
 
   // ##########################
@@ -65,7 +78,7 @@ export class OrderService {
 
   private async getPairs (): Promise<any[]> {
     try {
-      const allSymbols: any = await exchangeService.getExchangeInfoApi();
+      const allSymbols: any = await this.exchangeService.getExchangeInfoApi();
       const buySymbols = allSymbols.filter((symbol: any) => symbol.quote === AppConstants.QUOTE)
       const buyBuySell = this.getBuyBuySell(allSymbols, buySymbols)
       const buySellSell = this.getBuySellSell(allSymbols, buySymbols)
