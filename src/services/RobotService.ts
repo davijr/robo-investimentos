@@ -155,7 +155,7 @@ export class RobotService {
         if (crossRate > AppConstants.PROFITABILITY && priceBuy1 && priceBuy2 && priceSell) {
           const qty1 = AppConstants.AMOUNT / priceBuy1; // comprar 300 dólares da moeda X = 300 ÷ Px (preço de X) = Qx
           const qty2 = qty1 / priceBuy2; // comprar Qx da moeda Y = Qx ÷ Py (preço de Y) = Qy
-          const qty3 = qty2 / priceSell; // agora vou vender Qy da moeda Z = Qy ÷ P = Qz
+          const qty3 = qty2 * priceSell; // agora vou vender Qy da moeda Z = Qy ÷ P = Qz
           const symbols = [
             {
               symbol: candidate.buy1.symbol,
@@ -195,8 +195,8 @@ export class RobotService {
         const crossRate = (1 / priceBuy) * priceSell1 * priceSell2;
         if (crossRate > AppConstants.PROFITABILITY && priceBuy && priceSell1 && priceSell2) {
           const qty1 = AppConstants.AMOUNT / priceBuy;
-          const qty2 = qty1 / priceSell1;
-          const qty3 = qty2 / priceSell2;
+          const qty2 = qty1 * priceSell1;
+          const qty3 = qty2 * priceSell2;
           const symbols = [
             {
               symbol: candidate.buy.symbol,
