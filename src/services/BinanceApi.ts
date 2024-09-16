@@ -5,11 +5,11 @@ import querystring from 'querystring'
 
 export class BinanceApi {
   async get (path: string, data = {}) {
-    return this.privateCall(path, 'GET', data)
+    return await this.privateCall(path, 'GET', data);
   }
 
   async post (path: string, data = {}) {
-    return this.privateCall(path, 'POST', data)
+    return await this.privateCall(path, 'POST', data);
   }
 
   async privateCall (path: string, method = 'GET', data: any = {}) {

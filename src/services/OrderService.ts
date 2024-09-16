@@ -1,20 +1,21 @@
 import logger from '@config/logger'
 import { Order } from '@models/Order'
+import Trade from '@schemas/Trade'
 import { AppConstants } from '@utils/AppContants'
 import { AppUtils } from '@utils/AppUtils'
 import { OrderTypeEnum } from '../enum/OrderTypeEnum'
 import { BinanceApi } from './BinanceApi'
 import { ExchangeService } from './ExchangeService'
-import { RobotService } from './RobotService'
-import Trade from '@schemas/Trade'
+
+const binance = new BinanceApi();
+const exchangeService = new ExchangeService();
+// const robotService = new RobotService();
 
 export class OrderService {
-  private orderUrl = '/v3/order'
-  private orderHistoryUrl = '/v3/myTrades'
+  private orderUrl = '/v3/order';
+  private orderHistoryUrl = '/v3/myTrades';
 
-  binance = new BinanceApi()
-  exchangeService = new ExchangeService();
-  robotService = new RobotService();
+  pairs = [];
 
   async newOrder (order: Order) {
     order.type = order.type ?? OrderTypeEnum.MARKET
@@ -22,19 +23,22 @@ export class OrderService {
       order.timeInForce = 'GTC'
     }
     try {
-      return await this.binance.post(this.orderUrl, order)
+      return await binance.post(this.orderUrl, order)
     } catch (e: any) {
-      logger.error('Erro ao efetuar chamada à API Binance.', e.message)
+      logger.error(`Erro ao efetuar chamada à API Binance. ${AppUtils.extractErrorMessage(e)}`);
       return null;
     }
   }
 
-  doFilters() {}
+  setPairs(pairs: any) {
+    this.pairs = pairs;
+  }
 
   async getHistory () {
     try {
       // const symbols = await this.getPairs()
-      const symbols = await this.robotService.getPairs();
+      // const symbols = await robotService.getPairs();
+      const symbols = this.pairs;
       const allHistory: any[] = []
       const calls: any[] = []
       for (let i = 0; i < symbols.length; i++) {
@@ -66,7 +70,7 @@ export class OrderService {
       return trades.myTrades;
     }
     trades = {};
-    trades.myTrades = await this.binance.get(this.orderHistoryUrl, { symbol });
+    trades.myTrades = await binance.get(this.orderHistoryUrl, { symbol });
     trades.lastUpdate = new Date().getTime();
     await trades.save();
     return trades.myTrades;
@@ -76,30 +80,30 @@ export class OrderService {
   //  TODO remove
   // ##########################
 
-  private async getPairs (): Promise<any[]> {
-    try {
-      const allSymbols: any = await this.exchangeService.getExchangeInfoApi();
-      const buySymbols = allSymbols.filter((symbol: any) => symbol.quote === AppConstants.QUOTE)
-      const buyBuySell = this.getBuyBuySell(allSymbols, buySymbols)
-      const buySellSell = this.getBuySellSell(allSymbols, buySymbols)
-      const symbols: any = []
-      buyBuySell.forEach((i: any) => {
-        if (!symbols.includes(i.buy1.symbol)) symbols.push(i.buy1.symbol)
-        if (!symbols.includes(i.buy2.symbol)) symbols.push(i.buy2.symbol)
-        if (!symbols.includes(i.sell.symbol)) symbols.push(i.sell.symbol)
-      })
-      buySellSell.forEach((i: any) => {
-        if (!symbols.includes(i.buy.symbol)) symbols.push(i.buy.symbol)
-        if (!symbols.includes(i.sell1.symbol)) symbols.push(i.sell1.symbol)
-        if (!symbols.includes(i.sell2.symbol)) symbols.push(i.sell2.symbol)
-      })
-      return symbols
-    } catch (e: any) {
-      logger.error('Ocorreu um erro ao obter pares de símbolos.')
-      logger.error(e)
-      return []
-    }
-  }
+  // private async getPairs (): Promise<any[]> {
+  //   try {
+  //     const allSymbols: any = await exchangeService.getExchangeInfoApi();
+  //     const buySymbols = allSymbols.filter((symbol: any) => symbol.quote === AppConstants.QUOTE)
+  //     const buyBuySell = this.getBuyBuySell(allSymbols, buySymbols)
+  //     const buySellSell = this.getBuySellSell(allSymbols, buySymbols)
+  //     const symbols: any = []
+  //     buyBuySell.forEach((i: any) => {
+  //       if (!symbols.includes(i.buy1.symbol)) symbols.push(i.buy1.symbol)
+  //       if (!symbols.includes(i.buy2.symbol)) symbols.push(i.buy2.symbol)
+  //       if (!symbols.includes(i.sell.symbol)) symbols.push(i.sell.symbol)
+  //     })
+  //     buySellSell.forEach((i: any) => {
+  //       if (!symbols.includes(i.buy.symbol)) symbols.push(i.buy.symbol)
+  //       if (!symbols.includes(i.sell1.symbol)) symbols.push(i.sell1.symbol)
+  //       if (!symbols.includes(i.sell2.symbol)) symbols.push(i.sell2.symbol)
+  //     })
+  //     return symbols
+  //   } catch (e: any) {
+  //     logger.error('Ocorreu um erro ao obter pares de símbolos.')
+  //     logger.error(e)
+  //     return []
+  //   }
+  // }
 
   private getBuyBuySell (allSymbols: any, buySymbols: any) {
     const buyBuySell: any[] = []
