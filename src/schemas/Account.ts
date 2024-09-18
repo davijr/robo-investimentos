@@ -5,8 +5,7 @@ import mongoose from "mongoose";
 
 const schema = new mongoose.Schema({
     lastUpdate: Number,
-    symbol: String,
-    trades: [mongoose.Schema.Types.Mixed] // Tipo any
+    account: [mongoose.Schema.Types.Mixed] // Tipo any
 });
 
-export default mongoose.model('Trade', schema);
+export default mongoose.model('Account', schema);

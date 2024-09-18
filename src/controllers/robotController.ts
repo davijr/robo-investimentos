@@ -1,5 +1,6 @@
 import express from 'express'
 import { RobotService } from '@services/RobotService'
+import { RobotStatusEnum } from 'src/enum/RobotStatusEnum'
 
 const robotRoutes = express.Router()
 
@@ -19,14 +20,17 @@ robotRoutes.get('/status', async (req: any, res: any) => {
 
 robotRoutes.post('/status/:status', async (req: any, res: any) => {
   try {
-    robotService.setRobotStatus(req.params.status)
-    const result = robotService.getRobotStatus()
-    if (!result) {
-      return res.status(400).json({ message: 'No content.' })
+    const status = req.params.status;
+    await robotService.setRobotStatus(status);
+    if (!status) {
+      return res.status(400).json({ message: 'No content.' });
     }
-    return res.status(200).json(result)
+    if (status === RobotStatusEnum.ACTIVE) {
+      await robotService.run();
+    }
+    return res.status(200).json(status);
   } catch (message) {
-    return res.status(400).json({ message })
+    return res.status(400).json({ message });
   }
 })
 

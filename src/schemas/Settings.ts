@@ -1,9 +1,23 @@
 import mongoose from "mongoose";
 
 const schema = new mongoose.Schema({
-    quote: String,
-    profitability: Number,
-    amount: Number
+  status: {
+    type: String,
+    enum: [
+      'ACTIVE',
+      'STOPPED',
+      'SEARCHING',
+      'PREPARING',
+      'TRADING',
+      'ERROR'
+    ]
+  },
+  quote: String,
+  profitability: Number,
+  amount: Number,
+  myTradesUpdateInterval: Number,
+  accountUpdateInterval: Number,
+  lastUpdate: Number
 })
 
-export default mongoose.model('Settings', schema)
+export default mongoose.model('Settings', schema);

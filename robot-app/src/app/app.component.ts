@@ -24,7 +24,9 @@ export class AppComponent {
 
   onRefresh() {
     this.robotService.getRobotStatus().pipe(take(1))
-        .subscribe(result => { this.robotStatus = result })
+        .subscribe(result => {
+          this.robotStatus = result;
+        });
   }
 
   isActive (page: string) {
@@ -33,6 +35,7 @@ export class AppComponent {
 
   setRobotStatus (status: string) {
     this.robotService.setRobotStatus(status).pipe(take(1))
-        .subscribe(result => { this.robotStatus = result })
+        .subscribe(result => { this.robotStatus = result });
+    // this.onRefresh();
   }
 }

@@ -3,5 +3,7 @@ export enum RobotStatusEnum {
     ACTIVE = 'ACTIVE',
     STOPPED = 'STOPPED',
     SEARCHING = 'SEARCHING',
-    TRADING = 'TRADING'
+    PREPARING = 'PREPARING',
+    TRADING = 'TRADING',
+    ERROR = 'ERROR'
 }

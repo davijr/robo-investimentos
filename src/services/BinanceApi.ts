@@ -13,11 +13,11 @@ export class BinanceApi {
   }
 
   async privateCall (path: string, method = 'GET', data: any = {}) {
-    data.timestamp = Date.now()
-    // TODO data.recvWindows = 60000
+    data.timestamp = Date.now();
+    // data.recvWindows = 60000; // TODO ver o que é isso
     data.signature = crypto.createHmac('sha256', AppConstants.API_SECRET as string)
       .update(`${querystring.stringify(data)}`)
-      .digest('hex')
+      .digest('hex');
     const qs = `?${querystring.stringify(data)}`
     const result = await axios({
       method,
@@ -25,7 +25,7 @@ export class BinanceApi {
       headers: {
         'X-MBX-APIKEY': AppConstants.API_KEY
       }
-    })
-    return result.data
+    });
+    return result.data;
   }
 }

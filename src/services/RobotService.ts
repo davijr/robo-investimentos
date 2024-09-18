@@ -9,26 +9,42 @@ import { ExchangeService } from './ExchangeService';
 import { NotificationService, NotificationSoundType } from './NotificationService';
 import { OportunityService } from './OportunityService';
 import { OrderService } from './OrderService';
+import { SettingsService } from './SettingsService';
+import { WalletService } from './WalletService';
 
 const oportunityService = new OportunityService();
 const orderService = new OrderService();
 const exchangeService = new ExchangeService();
+const settingsService = new SettingsService();
+const walletSettings = new WalletService();
 
 export class RobotService {
-  robotStatus: RobotStatusEnum = RobotStatusEnum.SEARCHING;
+  settings: any = {};
+  robotStatus!: RobotStatusEnum;
   pairs: any = {};
   book: any = {};
 
   async init() {
+    this.settings = await settingsService.initSettings();
+    orderService.setSettings(this.settings);
+    walletSettings.setSettings(this.settings);
+    const lastStatus = this.settings.status;
+    await this.setRobotStatus(RobotStatusEnum.PREPARING);
     await this.processPairs();
-    this.createWebSocket(async (event: any) => {
-      if (this.robotStatus !== RobotStatusEnum.STOPPED && this.robotStatus !== RobotStatusEnum.TRADING) {
-        this.robotStatus = RobotStatusEnum.SEARCHING;
-        this.parseStream(event);
-        this.processBuyBuySell();
-        this.processBuySellSell();
-      }
-    });
+    await this.setRobotStatus(lastStatus);
+  }
+
+  async run() {
+    if (this.settings.robotStatus !== RobotStatusEnum.ERROR) {
+      await this.setRobotStatus(RobotStatusEnum.SEARCHING);
+      this.createWebSocket(async (event: any) => {
+        if (![RobotStatusEnum.STOPPED, RobotStatusEnum.TRADING].includes(this.settings.robotStatus)) {
+          this.parseStream(event);
+          this.processBuyBuySell();
+          this.processBuySellSell();
+        }
+      });
+    }
   }
 
   private parseStream(event: any) {
@@ -63,11 +79,13 @@ export class RobotService {
   }
 
   getRobotStatus() {
-    return this.robotStatus;
+    return this.settings.robotStatus;
   }
 
-  setRobotStatus(status: RobotStatusEnum) {
-    this.robotStatus = status;
+  async setRobotStatus(status: RobotStatusEnum) {
+    settingsService.setRobotStatus(status);
+    logger.info(`ROBOT STATUS: ${status}`);
+    this.settings.robotStatus = status;
   }
 
   getPairs() {
@@ -81,7 +99,7 @@ export class RobotService {
   getPrices(assets = []) {
     const prices: any = []
     assets.forEach(asset => {
-      const symbol = asset + AppConstants.QUOTE
+      const symbol = asset + this.settings.quote
       const price = this.book[symbol]
       if (price) {
         prices.push({
@@ -96,7 +114,7 @@ export class RobotService {
   async processPairs() {
     try {
       const allSymbols: any = await exchangeService.getUpdateExchange();
-      const buySymbols = allSymbols.filter((symbol: any) => symbol.quote === AppConstants.QUOTE);
+      const buySymbols = allSymbols.filter((symbol: any) => symbol.quote === this.settings.quote);
       const buyBuySell = this.getBuyBuySell(allSymbols, buySymbols);
       const buySellSell = this.getBuySellSell(allSymbols, buySymbols);
       this.pairs = {
@@ -110,9 +128,10 @@ export class RobotService {
           combinations: buySellSell
         }
       };
-      orderService.setPairs(this.pairs);
+      orderService.setAllSymbols(allSymbols);
       logger.info(`Foram encontrados ${this.pairs.size} pares disponíveis para triangulação.`);
     } catch (e: any) {
+      await this.setRobotStatus(RobotStatusEnum.ERROR);
       logger.error('Ocorreu um erro ao obter pares de símbolos.', AppUtils.extractErrorMessage(e));
     }
   }
@@ -148,38 +167,40 @@ export class RobotService {
   async processBuyBuySell() {
     logger.info('Process BBS - ' + new Date().toLocaleString());
     // try {
-      this.pairs?.buyBuySell?.combinations?.forEach(async (candidate: any) => {
-        let priceBuy1 = this.book[candidate.buy1.symbol]?.ask;
-        let priceBuy2 = this.book[candidate.buy2.symbol]?.ask;
-        let priceSell = this.book[candidate.sell.symbol]?.bid;
-        // profitability:
-        const crossRate = (1 / priceBuy1) * (1 / priceBuy2) * priceSell;
-        if (crossRate > AppConstants.PROFITABILITY && priceBuy1 && priceBuy2 && priceSell) {
-          const qty1 = AppConstants.AMOUNT / priceBuy1; // comprar 300 dólares da moeda X = 300 ÷ Px (preço de X) = Qx
-          const qty2 = qty1 / priceBuy2; // comprar Qx da moeda Y = Qx ÷ Py (preço de Y) = Qy
-          const qty3 = qty2 * priceSell; // agora vou vender Qy da moeda Z = Qy ÷ P = Qz
-          const symbols = [
-            {
-              symbol: candidate.buy1.symbol,
-              ...this.doFilters('B', priceBuy1, qty1, candidate.buy1.filters)
-            }, {
-              symbol: candidate.buy2.symbol,
-              ...this.doFilters('B', priceBuy2, qty2, candidate.buy2.filters)
-            }, {
-              symbol: candidate.sell.symbol,
-              ...this.doFilters('S', priceSell, qty3, candidate.sell.filters)
-            }
-          ];
-          NotificationService.playSound(NotificationSoundType.FOUND);
-          if (symbols.some(i => !i.quantity || !i.price)) {
-            logger.error('Ocorreu um erro ao processar as oportunidades BBS.');
-          } else {
-            await this.executeStrategy('BBS', symbols);
-            oportunityService.saveUpdate('BBS', symbols, crossRate);
-            logger.info(`Oportunidade BBS em ${symbols.map(i => i.symbol).join(' > ')} = ${crossRate}.`);
+    this.pairs?.buyBuySell?.combinations?.forEach(async (candidate: any) => {
+      let priceBuy1 = this.book[candidate.buy1.symbol]?.ask;
+      let priceBuy2 = this.book[candidate.buy2.symbol]?.ask;
+      let priceSell = this.book[candidate.sell.symbol]?.bid;
+      // profitability:
+      const crossRate = (1 / priceBuy1) * (1 / priceBuy2) * priceSell;
+      if (crossRate > this.settings.profitability && priceBuy1 && priceBuy2 && priceSell) {
+        const qty1 = this.settings.amount / priceBuy1; // comprar 300 dólares da moeda X = 300 ÷ Px (preço de X) = Qx
+        const qty2 = qty1 / priceBuy2; // comprar Qx da moeda Y = Qx ÷ Py (preço de Y) = Qy
+        const qty3 = qty2 * priceSell; // agora vou vender Qy da moeda Z = Qy ÷ P = Qz
+        const symbols = [
+          {
+            symbol: candidate.buy1.symbol,
+            ...this.doFilters('B', priceBuy1, qty1, candidate.buy1.filters)
+          }, {
+            symbol: candidate.buy2.symbol,
+            ...this.doFilters('B', priceBuy2, qty2, candidate.buy2.filters)
+          }, {
+            symbol: candidate.sell.symbol,
+            ...this.doFilters('S', priceSell, qty3, candidate.sell.filters)
           }
+        ];
+        if (symbols.some(i => !i.quantity || !i.price)) {
+          logger.error('Erro: parâmetros de quantidade e preço não atendem à estratégia de BSS.');
+        } else if (this.settings.robotStatus === RobotStatusEnum.TRADING) {
+          logger.error('Erro: robô em pausa, pois está operando. STATUS: TRADING');
+        } else {
+          NotificationService.playSound(NotificationSoundType.FOUND);
+          await this.executeStrategy('BBS', symbols);
+          oportunityService.saveUpdate('BBS', symbols, crossRate);
+          logger.info(`Oportunidade BBS em ${symbols.map(i => i.symbol).join(' > ')} = ${crossRate}.`);
         }
-      });
+      }
+    });
     // } catch(e) {
     //   logger.error('Ocorreu um erro ao processar as oportunidades BBS.', e);
     // }
@@ -188,41 +209,47 @@ export class RobotService {
   async processBuySellSell() {
     logger.info('Process BSS - ' + new Date().toLocaleString());
     // try {
-      this.pairs?.buySellSell?.combinations?.forEach(async (candidate: any) => {
-        const priceBuy = this.book[candidate.buy.symbol]?.ask;
-        const priceSell1 = this.book[candidate.sell1.symbol]?.bid;
-        const priceSell2 = this.book[candidate.sell2.symbol]?.bid;
-        // buy1
-        // let priceBuy = priceBuy = priceBuy?.ask
-        // buy2
-        // let priceSell1 = priceSell1Param = priceSell1?.bid
-        // buy1
-        // let priceSell2 = priceSell1Param = priceSell2?.bid
-        // profitability strategy
-        const crossRate = (1 / priceBuy) * priceSell1 * priceSell2;
-        if (crossRate > AppConstants.PROFITABILITY && priceBuy && priceSell1 && priceSell2) {
-          const qty1 = AppConstants.AMOUNT / priceBuy;
-          const qty2 = qty1 * priceSell1;
-          const qty3 = qty2 * priceSell2;
-          const symbols = [
-            {
-              symbol: candidate.buy.symbol,
-              ...this.doFilters('B', priceBuy, qty1, candidate.buy.filters)
-            }, {
-              symbol: candidate.sell1.symbol,
-              ...this.doFilters('S', priceSell1, qty2, candidate.sell1.filters)
-            }, {
-              symbol: candidate.sell2.symbol,
-              ...this.doFilters('S', priceSell2, qty3, candidate.sell2.filters)
-            }
-          ];
+    this.pairs?.buySellSell?.combinations?.forEach(async (candidate: any) => {
+      const priceBuy = this.book[candidate.buy.symbol]?.ask;
+      const priceSell1 = this.book[candidate.sell1.symbol]?.bid;
+      const priceSell2 = this.book[candidate.sell2.symbol]?.bid;
+      // buy1
+      // let priceBuy = priceBuy = priceBuy?.ask
+      // buy2
+      // let priceSell1 = priceSell1Param = priceSell1?.bid
+      // buy1
+      // let priceSell2 = priceSell1Param = priceSell2?.bid
+      // profitability strategy
+      const crossRate = (1 / priceBuy) * priceSell1 * priceSell2;
+      if (crossRate > this.settings.profitability && priceBuy && priceSell1 && priceSell2) {
+        const qty1 = this.settings.amount / priceBuy;
+        const qty2 = qty1 * priceSell1;
+        const qty3 = qty2 * priceSell2;
+        const symbols = [
+          {
+            symbol: candidate.buy.symbol,
+            ...this.doFilters('B', priceBuy, qty1, candidate.buy.filters)
+          }, {
+            symbol: candidate.sell1.symbol,
+            ...this.doFilters('S', priceSell1, qty2, candidate.sell1.filters)
+          }, {
+            symbol: candidate.sell2.symbol,
+            ...this.doFilters('S', priceSell2, qty3, candidate.sell2.filters)
+          }
+        ];
+        if (symbols.some(i => !i.quantity || !i.price)) {
+          logger.error('Erro: parâmetros de quantidade e preço não atendem à estratégia de BBS.');
+        } else if (this.settings.robotStatus === RobotStatusEnum.TRADING) {
+          logger.error('Erro: robô em pausa, pois está operando. STATUS: TRADING');
+        } else {
           NotificationService.playSound(NotificationSoundType.FOUND);
           await this.executeStrategy('BSS', symbols);
           oportunityService.saveUpdate('BBS', symbols, crossRate);
           logger.info(`Oportunidade BSS em ${symbols.map(i => i.symbol).join(' > ')} = ${crossRate}.`);
-          // logger.info(`Inicial: ${AppConstants.QUOTE} ${AppConstants.AMOUNT}, Final: ${AppConstants.QUOTE} ${(AppConstants.AMOUNT / priceBuy) * priceSell1 * priceSell2}`);
+          // logger.info(`Inicial: ${this.settings.quote} ${this.settings.amount}, Final: ${this.settings.quote} ${(this.settings.amount / priceBuy) * priceSell1 * priceSell2}`);
         }
-      });
+      }
+    });
     // } catch(e) {
     //   logger.error('Ocorreu um erro ao processar as oportunidades BBS.', e);
     // }
@@ -245,7 +272,7 @@ export class RobotService {
             if (price > Number(filter.maxPrice)) {
               this.runFilterError(filter.filterType, 'maxPrice');
             }
-            price = this.handleStepSize(price, Number(filter.tickSize));
+            price = this.handleTickSize(price, Number(filter.tickSize));
             break;
           /* case "PERCENT_PRICE_BY_SIDE":
             if (side === "B") {
@@ -335,7 +362,7 @@ export class RobotService {
   private handleTickSize(quantity: number, tickSize: number) {
     const beforeDot = new String(quantity).split(".")[0];
     const afterDot = new String(quantity).split(".")[1];
-    const qtyPositions = new String(tickSize).split(".")[1]?.length;
+    const qtyPositions = new String(tickSize).split(".")[1]?.length || 0;
     if (!afterDot) return quantity;
     return Number(`${beforeDot}.${afterDot.substring(0, qtyPositions).padEnd(qtyPositions, '0')}`);
   }
@@ -345,53 +372,62 @@ export class RobotService {
    */
   async executeStrategy(type: 'BSS' | 'BBS', symbols: any[]) {
     try {
-      this.robotStatus = RobotStatusEnum.TRADING;
+      await this.setRobotStatus(RobotStatusEnum.TRADING);
       logger.info(`##### INICIANDO ESTRATÉGIA DE TRIANGULAÇÃO - ${type} ${symbols.map(i => i.symbol).join(' > ')} #####`);
-      // ORDER 1
-      logger.info(`EXECUTANDO TRANSAÇÃO 1: BUY ${symbols[0].symbol}`);
-      const newOrder1 = {
-        type: OrderTypeEnum.LIMIT,
-        price: symbols[0].price,
-        symbol: symbols[0].symbol,
-        quantity: symbols[0].quantity,
-        side: OrderSideEnum.BUY
-      };
-      // await AppUtils.sleep(5)
-      const order1: any = await orderService.newOrder(newOrder1);
-      logger.info('ORDER 1', JSON.stringify(order1));
-      // ORDER 2
-      const transactionType = (type === 'BBS') ? OrderSideEnum.BUY : OrderSideEnum.SELL
-      logger.info(`EXECUTANDO TRANSAÇÃO 2: ${transactionType} ${symbols[1].symbol}`)
-      const newOrder2 = {
-        type: OrderTypeEnum.LIMIT,
-        price: symbols[1].price,
-        symbol: symbols[1].symbol,
-        quantity: symbols[1].quantity,
-        side: transactionType
+      if (process.env.NODE_ENV?.includes('dev')) {
+        symbols.forEach((symbol: any, index: number) => {
+          let transactionType = (index === 0) ? OrderSideEnum.BUY : OrderSideEnum.SELL;
+          transactionType = (index === 1 && type === 'BSS') ? OrderSideEnum.SELL : transactionType;
+          logger.info(`EXECUTANDO TRANSAÇÃO: ${index + 1}: ${transactionType} ${symbols[index].quantity} ${symbols[index].symbol} BY ${symbols[index].price}`);
+        });
+        await this.setRobotStatus(RobotStatusEnum.SEARCHING);
+      } else {
+        // ORDER 1
+        logger.info(`EXECUTANDO TRANSAÇÃO 1: BUY ${symbols[0].symbol}`);
+        const newOrder1 = {
+          type: OrderTypeEnum.LIMIT,
+          price: symbols[0].price,
+          symbol: symbols[0].symbol,
+          quantity: symbols[0].quantity,
+          side: OrderSideEnum.BUY
+        };
+        // await AppUtils.sleep(5)
+        const order1: any = await orderService.newOrder(newOrder1);
+        logger.info('ORDER 1', JSON.stringify(order1));
+        // ORDER 2
+        const transactionType = (type === 'BBS') ? OrderSideEnum.BUY : OrderSideEnum.SELL
+        logger.info(`EXECUTANDO TRANSAÇÃO 2: ${transactionType} ${symbols[1].symbol}`)
+        const newOrder2 = {
+          type: OrderTypeEnum.LIMIT,
+          price: symbols[1].price,
+          symbol: symbols[1].symbol,
+          quantity: symbols[1].quantity,
+          side: transactionType
+        }
+        // await AppUtils.sleep(5)
+        const order2: any = await orderService.newOrder(newOrder2)
+        logger.info('ORDER 2', JSON.stringify(order2))
+        // ORDER 3
+        logger.info(`EXECUTANDO TRANSAÇÃO 3: SELL ${symbols[2].symbol}`)
+        const newOrder3 = {
+          type: OrderTypeEnum.LIMIT,
+          price: symbols[2].price,
+          symbol: symbols[2].symbol,
+          quantity: symbols[2].quantity,
+          side: OrderSideEnum.SELL
+        }
+        // await AppUtils.sleep(5)
+        const order3: any = await orderService.newOrder(newOrder3)
+        logger.info('ORDER 3', JSON.stringify(order3))
+        NotificationService.playSound(NotificationSoundType.COMPLETED)
+        logger.info('##################### ESPERAR 1 MINUTO #####################')
+        await AppUtils.sleep(60);
+        await this.setRobotStatus(RobotStatusEnum.SEARCHING);
       }
-      // await AppUtils.sleep(5)
-      const order2: any = await orderService.newOrder(newOrder2)
-      logger.info('ORDER 2', JSON.stringify(order2))
-      // ORDER 3
-      logger.info(`EXECUTANDO TRANSAÇÃO 3: SELL ${symbols[2].symbol}`)
-      const newOrder3 = {
-        type: OrderTypeEnum.LIMIT,
-        price: symbols[2].price,
-        symbol: symbols[2].symbol,
-        quantity: symbols[2].quantity,
-        side: OrderSideEnum.SELL
-      }
-      // await AppUtils.sleep(5)
-      const order3: any = await orderService.newOrder(newOrder3)
-      logger.info('ORDER 3', JSON.stringify(order3))
-      NotificationService.playSound(NotificationSoundType.COMPLETED)
-      logger.info('##################### ESPERAR 1 MINUTO #####################')
-      await AppUtils.sleep(60)
-      this.robotStatus = RobotStatusEnum.SEARCHING
     } catch (e: any) {
       NotificationService.playSound(NotificationSoundType.ERROR)
       logger.error(`Deu ruim na hora de tentar executar estratégia. ${AppUtils.extractErrorMessage(e)}`)
-      this.robotStatus = RobotStatusEnum.SEARCHING
+      await this.setRobotStatus(RobotStatusEnum.SEARCHING);
       // logger.info('##################### PARAR ROBÔ #####################')
       // await AppUtils.sleep(60)
     }
@@ -420,7 +456,7 @@ export class RobotService {
   //     priceSell = priceSell.bid
   //     // profitability strategy
   //     const crossRate = (1 / priceBuy1) * (1 / priceBuy2) * priceSell
-  //     if (crossRate > AppConstants.PROFITABILITY && priceBuy1 && priceBuy2 && priceSell) {
+  //     if (crossRate > this.settings.profitability && priceBuy1 && priceBuy2 && priceSell) {
   //       logger.info(`Oportunidade em ${candidate.buy1.symbol} > ${candidate.buy2.symbol} > ${candidate.sell.symbol}.`);
   //     }
   //   })
@@ -509,8 +545,8 @@ async function processBuyBuySell() {
     priceSell = priceSell?.bid
     // profitability strategy
     const crossRate = (1 / priceBuy1) * (1 / priceBuy2) * priceSell
-    if (crossRate > AppConstants.PROFITABILITY && priceBuy1 && priceBuy2 && priceSell) {
-      const qty1 = AppConstants.AMOUNT / priceBuy1 // a primeira quantidade é do par com a moeda que eu já tenho
+    if (crossRate > this.settings.profitability && priceBuy1 && priceBuy2 && priceSell) {
+      const qty1 = this.settings.amount / priceBuy1 // a primeira quantidade é do par com a moeda que eu já tenho
       const qty2 = qty1 / priceBuy2 // a segunda quantidade é de acordo com o par da segunda operação
       const qty3 = qty2 // nesse caso a conta é: quantidade da moeda da segunda operação pela moeda par da terceira operação
       const symbols = [
@@ -530,7 +566,7 @@ async function processBuyBuySell() {
       ]
       NotificationService.playSound(NotificationSoundType.FOUND)
       logger.info(`Oportunidade BBS em ${symbols.map(i => i.symbol).join(' > ')} = ${crossRate}.`)
-      logger.info(`Inicial: ${AppConstants.QUOTE} ${AppConstants.AMOUNT}, Final ${AppConstants.QUOTE} ${((AppConstants.AMOUNT / priceBuy1) / priceBuy2) * priceSell}`)
+      logger.info(`Inicial: ${this.settings.quote} ${this.settings.amount}, Final ${this.settings.quote} ${((this.settings.amount / priceBuy1) / priceBuy2) * priceSell}`)
       await executeStrategy('BBS', symbols)
     }
   })
@@ -539,7 +575,7 @@ async function processBuyBuySell() {
 async function processBuySellSell(priceBuyParam: any, priceSell1Param: any, priceSell2Param: any) {
   logger.info('processBuySellSell() ' + new Date().toLocaleString())
   pairs?.buySellSell?.combinations?.forEach(async (candidate: any) => {
-    const qty1 = AppConstants.AMOUNT / priceBuyParam // a primeira quantidade é do par com a moeda que eu já tenho
+    const qty1 = this.settings.amount / priceBuyParam // a primeira quantidade é do par com a moeda que eu já tenho
     const qty2 = qty1 // a segunda quantidade é de acordo com o par da segunda operação
     const qty3 = qty2 / priceSell1Param // nesse caso a conta é: quantidade da moeda da segunda operação pela moeda par da terceira operação
     const symbols = [
@@ -571,10 +607,10 @@ async function processBuySellSell(priceBuyParam: any, priceSell1Param: any, pric
     // profitability strategy
     const crossRate = (1 / priceBuy) * priceSell1 * priceSell2
     // const canBeTraded = this.canBeTraded(symbols)
-    if (crossRate > AppConstants.PROFITABILITY && priceBuy && priceSell1 && priceSell2) {
+    if (crossRate > this.settings.profitability && priceBuy && priceSell1 && priceSell2) {
       NotificationService.playSound(NotificationSoundType.FOUND)
       logger.info(`Oportunidade BSS em ${symbols.map(i => i.symbol).join(' > ')} = ${crossRate}.`)
-      logger.info(`Inicial: ${AppConstants.QUOTE} ${AppConstants.AMOUNT}, Final: ${AppConstants.QUOTE} ${(AppConstants.AMOUNT / priceBuy) * priceSell1 * priceSell2}`)
+      logger.info(`Inicial: ${this.settings.quote} ${this.settings.amount}, Final: ${this.settings.quote} ${(this.settings.amount / priceBuy) * priceSell1 * priceSell2}`)
       await executeStrategy('BSS', symbols)
     }
   })

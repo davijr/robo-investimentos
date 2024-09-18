@@ -2,11 +2,11 @@ import '@config/environment';
 import logger from '@config/logger';
 import { ExchangeService } from '@services/ExchangeService';
 import { RobotService } from '@services/RobotService';
+import axios from 'axios';
 import bodyParser from 'body-parser';
 import express from 'express';
 import mongoose from 'mongoose';
 import mountRoutes from './routes';
-import JobQueue from './jobs/JobQueue';
 
 const app = express();
 
@@ -14,17 +14,26 @@ const app = express();
 
 (async () => {
   serveStaticFiles();
+  await setInterceptors();
   await initDatabase();
   initRobot();
 })()
 
+async function setInterceptors() {
+  axios.interceptors.request.use(request => {
+    logger.info(`### Starting Request: ${JSON.stringify(request.url, null, 2)}`);
+    return request;
+  });
+  axios.interceptors.response.use(response => {
+    logger.info(`### Response status: ${JSON.stringify(response.status, null, 2)}`);
+    return response;
+  });
+}
+
 async function initRobot() {
   const robotService = new RobotService()
-  robotService.init();
+  await robotService.init();
   // JobQueue.run();
-  // get process pairs
-  // robotService.processPairs()
-  // robotService.processBuyBuySell()
 }
 
 async function initDatabase() {
