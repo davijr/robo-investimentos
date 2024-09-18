@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "SET NODE_ENV=dev && ts-node-dev -r tsconfig-paths/register --respawn --transpile-only --ignore-watch node_modules --no-notify src/server.ts",
     "dev:debug": "SET NODE_ENV=dev && nodemon src/server.ts",
+    "dev:test": "SET NODE_ENV=test && nodemon src/server.ts",
     "dev:mac": "export NODE_ENV=dev && nodemon src/server.ts",
     "start": "export NODE_ENV=dev && node dist/server.js",
     "start:test": "export NODE_ENV=test && node dist/server.js",
