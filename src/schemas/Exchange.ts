@@ -22,7 +22,8 @@ const schema = new mongoose.Schema({
         "type": [
             "Mixed"
         ]
-    }
+    },
+    lastUpdate: Number
 })
 
 export default mongoose.model('Exchange', schema)

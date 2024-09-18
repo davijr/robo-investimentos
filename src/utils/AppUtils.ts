@@ -60,7 +60,7 @@ export class AppUtils {
     return moment().diff(date, 'day')
   }
 
-  public static diffMinutes (date: Date): number {
+  public static diffMinutes (date: any): number {
     return moment().diff(date, 'minutes')
   }
 

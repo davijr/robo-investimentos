@@ -8,7 +8,7 @@ const robotService = new RobotService()
 
 robotRoutes.get('/status', async (req: any, res: any) => {
   try {
-    const result = robotService.getRobotStatus()
+    const result = await robotService.getRobotStatus()
     if (!result) {
       return res.status(400).json({ message: 'No content.' })
     }

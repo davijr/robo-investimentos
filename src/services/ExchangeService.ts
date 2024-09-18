@@ -1,3 +1,4 @@
+import logger from '@config/logger';
 import Exchange from '@schemas/Exchange';
 import { AppConstants } from '@utils/AppContants';
 import { AppUtils } from '@utils/AppUtils';
@@ -29,9 +30,12 @@ export class ExchangeService {
 
   async getUpdateExchange() {
     let exchange: any = await Exchange.findOne();
-    const diff = AppUtils.diffMinutes(new Date(exchange?.lastUpdate));
-    if (!exchange || diff >= this.EXCHANGE_UPDATE_INTERVAL) {
-      console.log('Atualizar informações da exchange (Binance).');
+    const diff = AppUtils.diffMinutes(exchange?.lastUpdate) || 999;
+    if (!exchange || diff > this.EXCHANGE_UPDATE_INTERVAL) {
+      logger.info('Atualizando informações da exchange (Binance).');
+      if (!exchange) {
+        exchange = new Exchange({});
+      }
       exchange = await this.getExchangeInfoApi();
       exchange.lastUpdate = new Date().getTime();
       await this.update(exchange);

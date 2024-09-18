@@ -8,7 +8,8 @@ import { SettingsService } from 'src/app/services/settings.service';
   styleUrls: ['./settings.component.scss']
 })
 export class SettingsComponent implements OnInit {
-  settings: any
+  show = false;
+  settings: any[] = [];
 
   constructor (
     private settingsService: SettingsService
@@ -37,13 +38,13 @@ export class SettingsComponent implements OnInit {
   }
 
   getSettings() {
-    this.settingsService.getSettings().pipe(
-      tap(settings => {
-        console.log('settings', settings);
-        Object.keys(settings).forEach(key => {
-          this.settings[key] = settings[key];
-        });
-      })
-    )
+    this.settingsService.getSettings().subscribe(settings => {
+      const settingsObj: any = {};
+      Object.keys(settings).forEach(key => {
+        settingsObj[key] = settings[key];
+      });
+      this.settings.push(settingsObj);
+      this.show = true;
+    });
   }
 }

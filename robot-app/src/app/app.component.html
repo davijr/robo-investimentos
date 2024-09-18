@@ -4,7 +4,7 @@
         <h1>
             Robot
             <button mat-fab color="primary" tooltip="Stop" aria-label="Stop" class="ng-btn-lg"
-                (click)="setRobotStatus('STOPPED')" *ngIf="robotStatus !== 'STOPPED'">
+                (click)="setRobotStatus('STOPPED')" *ngIf="robotStatus === 'ACTIVE'">
                 <mat-icon>toggle_on</mat-icon>
             </button>
             <button mat-fab color="light" tooltip="Activate" aria-label="Activate"
@@ -14,7 +14,7 @@
         </h1>
         <div>
             <button mat-button color="primary" [ngClass]="{'active': isActive('panel')}" [routerLink]="['/panel']">Panel</button>
-            <!-- <button mat-button color="primary" [ngClass]="{'active': isActive('prices')}" [routerLink]="['/prices']">Prices</button -->
+            <button mat-button color="primary" [ngClass]="{'active': isActive('prices')}" [routerLink]="['/prices']">Prices</button>
             <button mat-button color="primary" [ngClass]="{'active': isActive('orders')}" [routerLink]="['/orders']">Orders</button>
             <button mat-button color="primary" [ngClass]="{'active': isActive('settings')}" [routerLink]="['/settings']">Settings</button>
         </div>

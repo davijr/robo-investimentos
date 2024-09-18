@@ -21,11 +21,11 @@ const app = express();
 
 async function setInterceptors() {
   axios.interceptors.request.use(request => {
-    logger.info(`### Starting Request: ${JSON.stringify(request.url, null, 2)}`);
+    logger.info(`# REQUEST: ${JSON.stringify(request.url, null, 2)}`);
     return request;
   });
   axios.interceptors.response.use(response => {
-    logger.info(`### Response status: ${JSON.stringify(response.status, null, 2)}`);
+    logger.info(`# RESPONSE STATUS: ${JSON.stringify(response.status, null, 2)}`);
     return response;
   });
 }
@@ -39,8 +39,8 @@ async function initRobot() {
 async function initDatabase() {
   try {
     mongoose.connect(`${process.env.MONGODB_URL}`);
-    const exchangeService = new ExchangeService();
-    await exchangeService.getUpdateExchange();
+    // const exchangeService = new ExchangeService();
+    // await exchangeService.getUpdateExchange();
   } catch (error) {
     logger.error(error)
   }

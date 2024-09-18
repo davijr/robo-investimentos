@@ -15,9 +15,6 @@ export class SettingsService {
   }
 
   setSettings (status: string): Observable<any> {
-    // const settings = {
-
-    // };
     return this.api.postRequest(`${this.BASE_URL}`, {}).pipe(take(1));
   }
 }

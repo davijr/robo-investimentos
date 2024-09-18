@@ -7,7 +7,7 @@ const settingsService = new SettingsService()
 
 settingsRoutes.get('/', async (req: any, res: any) => {
   try {
-    const result = settingsService.initSettings();
+    const result = await settingsService.initSettings();
     if (!result) {
       return res.status(400).json({ message: 'No content.' })
     }
