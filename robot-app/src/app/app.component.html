@@ -11,6 +11,10 @@
                 (click)="setRobotStatus('ACTIVE')" *ngIf="robotStatus === 'STOPPED'">
                 <mat-icon>toggle_off</mat-icon>
             </button>
+            <button mat-fab color="secondary" tooltip="Reset" aria-label="Reset"
+                (click)="setRobotStatus('STOPPED')">
+                <mat-icon>toggle_off</mat-icon>
+            </button>
         </h1>
         <div>
             <button mat-button color="primary" [ngClass]="{'active': isActive('panel')}" [routerLink]="['/panel']">Panel</button>
