@@ -18,7 +18,7 @@ export class OrderService {
   async newOrder (order: Order) {
     order.type = order.type ?? OrderTypeEnum.MARKET
     if (order.type === OrderTypeEnum.LIMIT) {
-      order.timeInForce = 'GTC'
+      order.timeInForce = 'GTC'; // TODO comentei pra testar o recWindows
     }
     try {
       return await binance.post(this.orderUrl, order)

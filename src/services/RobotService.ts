@@ -245,7 +245,7 @@ export class RobotService {
         } else {
           NotificationService.playSound(NotificationSoundType.FOUND);
           await this.executeStrategy('BSS', symbols);
-          oportunityService.saveUpdate('BBS', symbols, crossRate);
+          oportunityService.saveUpdate('BSS', symbols, crossRate);
           logger.info(`Oportunidade BSS em ${symbols.map(i => i.symbol).join(' > ')} = ${crossRate}.`);
           // logger.info(`Inicial: ${settings.quote} ${settings.amount}, Final: ${settings.quote} ${(settings.amount / priceBuy) * priceSell1 * priceSell2}`);
         }
@@ -375,14 +375,12 @@ export class RobotService {
     try {
       await this.setRobotStatus(RobotStatusEnum.TRADING);
       logger.info(`##### INICIANDO ESTRATÉGIA DE TRIANGULAÇÃO - ${type} ${symbols.map(i => i.symbol).join(' > ')} #####`);
-      if (process.env.NODE_ENV?.includes('dev')) {
-        symbols.forEach((symbol: any, index: number) => {
-          let transactionType = (index === 0) ? OrderSideEnum.BUY : OrderSideEnum.SELL;
-          transactionType = (index === 1 && type === 'BSS') ? OrderSideEnum.SELL : transactionType;
-          logger.info(`EXECUTANDO TRANSAÇÃO: ${index + 1}: ${transactionType} ${symbols[index].quantity} ${symbols[index].symbol} BY ${symbols[index].price}`);
-        });
-        await this.setRobotStatus(RobotStatusEnum.SEARCHING);
-      } else {
+      symbols.forEach((symbol: any, index: number) => {
+        let transactionType = (index === 0) ? OrderSideEnum.BUY : OrderSideEnum.SELL;
+        transactionType = (index === 1 && type === 'BSS') ? OrderSideEnum.SELL : transactionType;
+        logger.info(`OPERAÇÃO ${index + 1}: ${transactionType} ${symbols[index].quantity} ${symbols[index].symbol} BY ${symbols[index].price}`);
+      });
+      if (!process.env.NODE_ENV?.includes('dev')) {
         // ORDER 1
         logger.info(`EXECUTANDO TRANSAÇÃO 1: BUY ${symbols[0].symbol}`);
         const newOrder1 = {
@@ -394,44 +392,66 @@ export class RobotService {
         };
         // await AppUtils.sleep(5)
         const order1: any = await orderService.newOrder(newOrder1);
-        logger.info('ORDER 1', JSON.stringify(order1));
-        // ORDER 2
-        const transactionType = (type === 'BBS') ? OrderSideEnum.BUY : OrderSideEnum.SELL
-        logger.info(`EXECUTANDO TRANSAÇÃO 2: ${transactionType} ${symbols[1].symbol}`)
-        const newOrder2 = {
-          type: OrderTypeEnum.LIMIT,
-          price: symbols[1].price,
-          symbol: symbols[1].symbol,
-          quantity: symbols[1].quantity,
-          side: transactionType
+        if (order1) {
+          logger.info('ORDER 1', JSON.stringify(order1));
+          // ORDER 2
+          const transactionType = (type === 'BBS') ? OrderSideEnum.BUY : OrderSideEnum.SELL
+          logger.info(`EXECUTANDO TRANSAÇÃO 2: ${transactionType} ${symbols[1].symbol}`)
+          const newOrder2 = {
+            type: OrderTypeEnum.LIMIT,
+            price: symbols[1].price,
+            symbol: symbols[1].symbol,
+            quantity: symbols[1].quantity,
+            side: transactionType
+          }
+          logger.info('==================== PAUSA DE 90 SEGUNDOS ====================');
+          await AppUtils.sleep(90);
+          // await AppUtils.sleep(5)
+
+          const order2: any = await orderService.newOrder(newOrder2)
+          if (order2) {
+            logger.info('ORDER 2', JSON.stringify(order2))
+            // ORDER 3
+            logger.info(`EXECUTANDO TRANSAÇÃO 3: SELL ${symbols[2].symbol}`)
+            const newOrder3 = {
+              type: OrderTypeEnum.LIMIT,
+              price: symbols[2].price,
+              symbol: symbols[2].symbol,
+              quantity: symbols[2].quantity,
+              side: OrderSideEnum.SELL
+            }
+            logger.info('==================== PAUSA DE 90 SEGUNDOS ====================');
+            await AppUtils.sleep(90);
+            // await AppUtils.sleep(5)
+
+            const order3: any = await orderService.newOrder(newOrder3)
+            if (order3) {
+              logger.info('ORDER 3', JSON.stringify(order3))
+              NotificationService.playSound(NotificationSoundType.COMPLETED);
+              logger.info('################### OPERAÇÃO COMPLETADA ####################');
+              logger.info('##################### ESPERAR 1 MINUTO #####################');
+              await AppUtils.sleep(60);
+              await this.setRobotStatus(RobotStatusEnum.SEARCHING);
+            } else {
+              await this.runError({}, 'Erro ao tentar executar a terceira ordem.');
+            }
+          } else {
+            await this.runError({}, 'Erro ao tentar executar a segunda ordem.');
+          }
+        } else {
+          await this.runError({}, 'Erro ao tentar executar a primeira.');
         }
-        // await AppUtils.sleep(5)
-        const order2: any = await orderService.newOrder(newOrder2)
-        logger.info('ORDER 2', JSON.stringify(order2))
-        // ORDER 3
-        logger.info(`EXECUTANDO TRANSAÇÃO 3: SELL ${symbols[2].symbol}`)
-        const newOrder3 = {
-          type: OrderTypeEnum.LIMIT,
-          price: symbols[2].price,
-          symbol: symbols[2].symbol,
-          quantity: symbols[2].quantity,
-          side: OrderSideEnum.SELL
-        }
-        // await AppUtils.sleep(5)
-        const order3: any = await orderService.newOrder(newOrder3)
-        logger.info('ORDER 3', JSON.stringify(order3))
-        NotificationService.playSound(NotificationSoundType.COMPLETED)
-        logger.info('##################### ESPERAR 1 MINUTO #####################')
-        await AppUtils.sleep(60);
-        await this.setRobotStatus(RobotStatusEnum.SEARCHING);
       }
     } catch (e: any) {
-      NotificationService.playSound(NotificationSoundType.ERROR)
-      logger.error(`Deu ruim na hora de tentar executar estratégia. ${AppUtils.extractErrorMessage(e)}`)
-      await this.setRobotStatus(RobotStatusEnum.SEARCHING);
-      // logger.info('##################### PARAR ROBÔ #####################')
-      // await AppUtils.sleep(60)
+      await this.runError(e, 'Deu ruim na hora de tentar executar estratégia.');
     }
+  }
+
+  private async runError(e: any, msg: string) {
+    await this.setRobotStatus(RobotStatusEnum.ERROR);
+    NotificationService.playSound(NotificationSoundType.ERROR);
+    logger.error(`${msg} ${AppUtils.extractErrorMessage(e)}`);
+    logger.error('##################### PARAR ROBÔ #####################');
   }
 
   /*************

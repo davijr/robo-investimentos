@@ -14,7 +14,7 @@ export class BinanceApi {
 
   async privateCall (path: string, method = 'GET', data: any = {}) {
     data.timestamp = Date.now();
-    // data.recvWindows = 60000; // TODO ver o que é isso
+    // data.recvWindows = 60000; // janela de tolerância para execução de ordens
     data.signature = crypto.createHmac('sha256', AppConstants.API_SECRET as string)
       .update(`${querystring.stringify(data)}`)
       .digest('hex');
