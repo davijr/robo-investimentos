@@ -1,11 +1,34 @@
 
 A ÚNICA COISA:
-1. Carregar dados atualizados do servidor da Binance (exchangeinfo) e guardar/atualizar na base local. (No prazo de 1 hora, atualizar). - OK
-2. 
+[ ] Melhorar tela de oportunidades no front-end
 
 
 
-Dúvidas que eu preciso resolver para avançar com o robô: 
+
+
+
+
+# ÚLTIMAS MUDANÇAS
+[x] Criar validação de preço e quantidade antes de efetuar a transação.
+  [x] Identificar local exato da validação
+  [x] Implementar o método
+[x] Persistir as ordens junto com a Oportunidade: order1, order2, order3
+  [x] Criar campos no Schema
+  [x] Fazer o executeStrategy receber via parâmetro
+  [x] Persistir as ordens
+  [x] Persistir o status de sucesso
+  [x] Persistir os erros
+[x] Carregar dados atualizados do servidor da Binance (exchangeinfo) e guardar/atualizar na base local. (No prazo de 1 hora, atualizar).
+
+
+# BACKLOG
+[ ] Separar o robô na parte que executa as operações
+  [ ] O robô deve: aguardar uma requisição POST com os parâmetros da oportunidade
+  [ ] Deve executar as 3 operações.
+  [ ] Deve persistir ao final a oportunidade recebida, com seu respectivo status.
+  [ ] Deve retornar com o status dele próprio.
+
+[ ] Sanar todas as questões abaixo: Dúvidas que eu preciso resolver para avançar com o robô: 
 1. Como não ser bloqueado? 
   a. Evitar chamar api via REST: https://testnet.binance.vision/api/v3/exchangeInfo
   b. Pesquisar se tem algum web service pra isso.

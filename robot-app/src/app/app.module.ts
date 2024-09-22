@@ -36,6 +36,7 @@ import { MatListModule } from '@angular/material/list'
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner'
 import { PanelComponent } from './pages/panel/panel.component'
 import { FormatTimestampPipe } from './pipes/format-timestamp.pipe'
+import { OportunityComponent } from './pages/oportunity/oportunity.component'
 
 @NgModule({
   declarations: [
@@ -43,6 +44,7 @@ import { FormatTimestampPipe } from './pipes/format-timestamp.pipe'
     PanelComponent,
     PricesComponent,
     SettingsComponent,
+    OportunityComponent,
     OrdersComponent,
     TableComponent,
     FormatTimestampPipe
