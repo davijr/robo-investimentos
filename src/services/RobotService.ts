@@ -11,6 +11,7 @@ import { OportunityService } from './OportunityService';
 import { OrderService } from './OrderService';
 import { SettingsService } from './SettingsService';
 import { WalletService } from './WalletService';
+import { OportunityStatusEnum } from 'src/enum/OportunityStatusEnum';
 
 const oportunityService = new OportunityService();
 const orderService = new OrderService();
@@ -175,9 +176,9 @@ export class RobotService {
       // profitability:
       const crossRate = (1 / priceBuy1) * (1 / priceBuy2) * priceSell;
       if (crossRate > settings.profitability && priceBuy1 && priceBuy2 && priceSell) {
-        const qty1 = settings.amount / priceBuy1; // comprar 300 dólares da moeda X = 300 ÷ Px (preço de X) = Qx
-        const qty2 = qty1 / priceBuy2; // comprar Qx da moeda Y = Qx ÷ Py (preço de Y) = Qy
-        const qty3 = qty2 * priceSell; // agora vou vender Qy da moeda Z = Qy ÷ P = Qz
+        const qty1 = settings.amount / priceBuy1; // buy YFI
+        const qty2 = qty1 / priceBuy2; // buy LTC
+        const qty3 = qty2; // sell LTC (changing to USDT)
         const symbols = [
           {
             symbol: candidate.buy1.symbol,
@@ -190,14 +191,13 @@ export class RobotService {
             ...this.doFilters('S', priceSell, qty3, candidate.sell.filters)
           }
         ];
-        if (symbols.some(i => !i.quantity || !i.price)) {
+        if (this.hasInvalidParams(symbols)) {
           logger.error('Erro: parâmetros de quantidade e preço não atendem à estratégia de BSS.');
         } else if (settings.robotStatus === RobotStatusEnum.TRADING) {
           logger.error('Erro: robô em pausa, pois está operando. STATUS: TRADING');
         } else {
           NotificationService.playSound(NotificationSoundType.FOUND);
-          await this.executeStrategy('BBS', symbols);
-          oportunityService.saveUpdate('BBS', symbols, crossRate);
+          await this.executeStrategy({ strategy: 'BBS', symbols, crossRate, initialValue: settings.amount });
           logger.info(`Oportunidade BBS em ${symbols.map(i => i.symbol).join(' > ')} = ${crossRate}.`);
         }
       }
@@ -223,9 +223,9 @@ export class RobotService {
       // profitability strategy
       const crossRate = (1 / priceBuy) * priceSell1 * priceSell2;
       if (crossRate > settings.profitability && priceBuy && priceSell1 && priceSell2) {
-        const qty1 = settings.amount / priceBuy;
-        const qty2 = qty1 * priceSell1;
-        const qty3 = qty2 * priceSell2;
+        const qty1 = settings.amount / priceBuy; // ex: buy YFI
+        const qty2 = qty1; // qty1 * priceSell1; // sell YFI (changing to BTC)
+        const qty3 = qty1 * priceSell1; // sell BTC (changing to USDT)
         const symbols = [
           {
             symbol: candidate.buy.symbol,
@@ -238,15 +238,15 @@ export class RobotService {
             ...this.doFilters('S', priceSell2, qty3, candidate.sell2.filters)
           }
         ];
-        if (symbols.some(i => !i.quantity || !i.price)) {
+        if (this.hasInvalidParams(symbols)) {
           logger.error('Erro: parâmetros de quantidade e preço não atendem à estratégia de BBS.');
         } else if (settings.robotStatus === RobotStatusEnum.TRADING) {
           logger.error('Erro: robô em pausa, pois está operando. STATUS: TRADING');
         } else {
           NotificationService.playSound(NotificationSoundType.FOUND);
-          await this.executeStrategy('BSS', symbols);
-          oportunityService.saveUpdate('BSS', symbols, crossRate);
+          await this.executeStrategy({ strategy: 'BSS', symbols, crossRate, initialValue: settings.amount });
           logger.info(`Oportunidade BSS em ${symbols.map(i => i.symbol).join(' > ')} = ${crossRate}.`);
+          // oportunityService.saveUpdate({ strategy: 'BSS', symbols, crossRate });
           // logger.info(`Inicial: ${settings.quote} ${settings.amount}, Final: ${settings.quote} ${(settings.amount / priceBuy) * priceSell1 * priceSell2}`);
         }
       }
@@ -254,6 +254,19 @@ export class RobotService {
     // } catch(e) {
     //   logger.error('Ocorreu um erro ao processar as oportunidades BBS.', e);
     // }
+  }
+
+  private hasInvalidParams(symbols: any[]) {
+    if (symbols.some(i => !i.quantity || !i.price)) {
+      return true;
+    }
+    const qty3 = symbols[2].quantity * symbols[2].price;
+    const profitability = (qty3 - settings.amount) / settings.amount;
+    const hasProfit = profitability > 0;
+    if (!hasProfit) {
+      return true;
+    }
+    return false;
   }
 
   /**
@@ -371,13 +384,15 @@ export class RobotService {
   /**
    * EXECUTE STRATEGY
    */
-  async executeStrategy(type: 'BSS' | 'BBS', symbols: any[]) {
+  async executeStrategy(oportunity: any) {
+    const { strategy, symbols, crossRate } = oportunity;
+    const ordersReponse = [];
     try {
       await this.setRobotStatus(RobotStatusEnum.TRADING);
-      logger.info(`##### INICIANDO ESTRATÉGIA DE TRIANGULAÇÃO - ${type} ${symbols.map(i => i.symbol).join(' > ')} #####`);
+      logger.info(`##### INICIANDO ESTRATÉGIA DE TRIANGULAÇÃO - ${strategy} ${symbols.map((i: any) => i.symbol).join(' > ')} #####`);
       symbols.forEach((symbol: any, index: number) => {
         let transactionType = (index === 0) ? OrderSideEnum.BUY : OrderSideEnum.SELL;
-        transactionType = (index === 1 && type === 'BSS') ? OrderSideEnum.SELL : transactionType;
+        transactionType = (index === 1 && strategy === 'BSS') ? OrderSideEnum.SELL : transactionType;
         logger.info(`OPERAÇÃO ${index + 1}: ${transactionType} ${symbols[index].quantity} ${symbols[index].symbol} BY ${symbols[index].price}`);
       });
       if (!process.env.NODE_ENV?.includes('dev')) {
@@ -393,9 +408,10 @@ export class RobotService {
         // await AppUtils.sleep(5)
         const order1: any = await orderService.newOrder(newOrder1);
         if (order1) {
+          ordersReponse.push(order1);
           logger.info('ORDER 1', JSON.stringify(order1));
           // ORDER 2
-          const transactionType = (type === 'BBS') ? OrderSideEnum.BUY : OrderSideEnum.SELL
+          const transactionType = (strategy === 'BBS') ? OrderSideEnum.BUY : OrderSideEnum.SELL
           logger.info(`EXECUTANDO TRANSAÇÃO 2: ${transactionType} ${symbols[1].symbol}`)
           const newOrder2 = {
             type: OrderTypeEnum.LIMIT,
@@ -404,12 +420,13 @@ export class RobotService {
             quantity: symbols[1].quantity,
             side: transactionType
           }
-          logger.info('==================== PAUSA DE 90 SEGUNDOS ====================');
-          await AppUtils.sleep(90);
+          logger.info('==================== PAUSA DE 1 SEGUNDO ====================');
+          await AppUtils.sleep(1);
           // await AppUtils.sleep(5)
 
           const order2: any = await orderService.newOrder(newOrder2)
           if (order2) {
+            ordersReponse.push(order2);
             logger.info('ORDER 2', JSON.stringify(order2))
             // ORDER 3
             logger.info(`EXECUTANDO TRANSAÇÃO 3: SELL ${symbols[2].symbol}`)
@@ -420,12 +437,18 @@ export class RobotService {
               quantity: symbols[2].quantity,
               side: OrderSideEnum.SELL
             }
-            logger.info('==================== PAUSA DE 90 SEGUNDOS ====================');
-            await AppUtils.sleep(90);
+            logger.info('==================== PAUSA DE 1 SEGUNDO ====================');
+            await AppUtils.sleep(1);
             // await AppUtils.sleep(5)
 
             const order3: any = await orderService.newOrder(newOrder3)
             if (order3) {
+              ordersReponse.push(order3);
+              oportunity.status = OportunityStatusEnum.SUCCESS;
+              oportunity.ordersReponse = ordersReponse;
+              oportunity.finalValue = Number(ordersReponse[2].cummulativeQuoteQty);
+              oportunityService.saveUpdate(oportunity);
+              // oportunityService.saveUpdate({ strategy, symbols, crossRate, ordersRequest: symbols, ordersReponse });
               logger.info('ORDER 3', JSON.stringify(order3))
               NotificationService.playSound(NotificationSoundType.COMPLETED);
               logger.info('################### OPERAÇÃO COMPLETADA ####################');
@@ -433,24 +456,32 @@ export class RobotService {
               await AppUtils.sleep(60);
               await this.setRobotStatus(RobotStatusEnum.SEARCHING);
             } else {
-              await this.runError({}, 'Erro ao tentar executar a terceira ordem.');
+              await this.runError(OportunityStatusEnum.ERROR_ORDER3, {}, oportunity);
             }
           } else {
-            await this.runError({}, 'Erro ao tentar executar a segunda ordem.');
+            await this.runError(OportunityStatusEnum.ERROR_ORDER2, {}, oportunity);
           }
         } else {
-          await this.runError({}, 'Erro ao tentar executar a primeira.');
+          await this.runError(OportunityStatusEnum.ERROR_ORDER1, {}, oportunity);
         }
+      } else {
+        logger.info('##################### FIM DA OPERAÇÃO #####################');
+        await this.setRobotStatus(RobotStatusEnum.SEARCHING);
       }
     } catch (e: any) {
-      await this.runError(e, 'Deu ruim na hora de tentar executar estratégia.');
+      await this.runError(OportunityStatusEnum.ERROR_OTHER, e, oportunity);
     }
   }
 
-  private async runError(e: any, msg: string) {
+  private async runError(status: string, error: any, oportunity: any) {
+    const msg = `Erro ao tentar executar ordem: ${status}. ${AppUtils.extractErrorMessage(error)}`;
+    oportunity.status = status;
+    oportunity.error = error;
+    oportunity.errorMessage = msg;
+    oportunityService.saveUpdate(oportunity);
     await this.setRobotStatus(RobotStatusEnum.ERROR);
     NotificationService.playSound(NotificationSoundType.ERROR);
-    logger.error(`${msg} ${AppUtils.extractErrorMessage(e)}`);
+    logger.error(msg);
     logger.error('##################### PARAR ROBÔ #####################');
   }
 

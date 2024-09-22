@@ -25,11 +25,12 @@ export class OportunityService {
     return await oportunity.save();
   }
 
-  public async saveUpdate(strategy: string, symbols: any, crossRate: any) {
+  public async saveUpdate(oportunity: any) {
+    const { strategy, symbols, crossRate } = oportunity;
     const createOportunityKey = `${strategy}_${symbols.map((i: any) => i.symbol).join('_')}_${crossRate}`;
     const findOportunity = await Oportunity.findOne({key: createOportunityKey});
     if (findOportunity) {
-      const duration = AppUtils.diffSec(findOportunity?.firstOffer);
+      const duration = AppUtils.diffSec(findOportunity?.timeFirstOffer);
       findOportunity.duration = duration;
       findOportunity.save(); // keep async
       logger.info(`### Oportunidade: strategy: ${strategy}, oportunityKey: ${createOportunityKey}, ` +
@@ -38,14 +39,9 @@ export class OportunityService {
       const oportunitySchema = new Oportunity({
         key: createOportunityKey,
         strategy,
-        pair1: symbols[0].symbol,
-        pair2: symbols[1].symbol,
-        pair3: symbols[2].symbol,
-        firstOffer: new Date().getTime(),
+        ordersRequest: symbols,
+        timeFirstOffer: new Date().getTime(),
         duration: 0,
-        price1: symbols[0].price,
-        price2: symbols[1].price,
-        price3: symbols[2].price,
         profitability: crossRate
       });
       await oportunitySchema.save();

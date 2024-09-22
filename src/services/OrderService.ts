@@ -40,7 +40,7 @@ export class OrderService {
     const allHistory: any[] = [];
     const trades: any = await Trade.find();
     const firstTrade = trades[0] || {};
-    const updateInterval = AppUtils.diffMinutes(firstTrade?.lastUpdate) || 0;
+    const updateInterval = AppUtils.diffMinutes(firstTrade?.lastUpdate) || 999;
     if (trades && updateInterval <= settings.myTradesUpdateInterval) {
       settings.includeSymbols.forEach((symbol: string, i: number) => {
         const history = trades.find((trade: any) => trade.symbol === symbol)?.trades;
