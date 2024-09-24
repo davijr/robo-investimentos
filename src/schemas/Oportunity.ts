@@ -1,5 +1,4 @@
 import mongoose from "mongoose";
-import { final } from "pino";
 
 // Converter JSON para Schema do Mongoose:
 // https://transform.tools/json-to-mongoose

@@ -4,6 +4,7 @@ import Trade from '@schemas/Trade';
 import { AppUtils } from '@utils/AppUtils';
 import { OrderTypeEnum } from '../enum/OrderTypeEnum';
 import { BinanceApi } from './BinanceApi';
+import { OrderStatusEnum } from 'src/enum/OrderStatusEnum';
 
 const binance = new BinanceApi();
 
@@ -23,8 +24,9 @@ export class OrderService {
     try {
       return await binance.post(this.orderUrl, order)
     } catch (e: any) {
-      logger.error(`Erro ao efetuar chamada à API Binance. ${AppUtils.extractErrorMessage(e)}`);
-      return null;
+      const msg = `Erro ao efetuar chamada à API Binance. ${AppUtils.extractErrorMessage(e)}`;
+      logger.error(msg);
+      throw new Error(msg);
     }
   }
 
@@ -40,7 +42,7 @@ export class OrderService {
     const allHistory: any[] = [];
     const trades: any = await Trade.find();
     const firstTrade = trades[0] || {};
-    const updateInterval = AppUtils.diffMinutes(firstTrade?.lastUpdate) || 999;
+    const updateInterval = AppUtils.diffSec(firstTrade?.lastUpdate) || 999;
     if (trades && updateInterval <= settings.myTradesUpdateInterval) {
       settings.includeSymbols.forEach((symbol: string, i: number) => {
         const history = trades.find((trade: any) => trade.symbol === symbol)?.trades;
@@ -93,6 +95,21 @@ export class OrderService {
       trade.lastUpdate = new Date().getTime();
       await trade.save();
     }
+  }
+
+  async getFinalStatus(order: any): Promise<string> {
+    for (const interval of settings.attemptIntervals) {
+      logger.info(`ORDER STATUS: ${order.status}`);
+      const orderSearch = await binance.get(this.orderUrl, { orderId: order?.orderId });
+      if ([OrderStatusEnum.FILLED, OrderStatusEnum.CANCELED, OrderStatusEnum.REJECTED].includes(orderSearch?.status)) {
+        return orderSearch;
+      }
+      logger.info(`## Aguardando ordem ser preenchida. Intervalo: ${interval} segundo(s). ORDER STATUS: ${orderSearch.status}.}`);
+      await AppUtils.sleep(interval);
+    }
+    const error = `!! ERRO: A ordem não foi preenchida. ORDER ID: ${order._id}`;
+    logger.error(error);
+    throw new Error(error);
   }
 
   // private async getOneHistory (symbol: string) {

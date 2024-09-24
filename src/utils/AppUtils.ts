@@ -60,7 +60,7 @@ export class AppUtils {
     return moment().diff(date, 'day')
   }
 
-  public static diffMinutes (date: any): number {
+  public static diffMin (date: any): number {
     return moment().diff(date, 'minutes')
   }
 
@@ -73,9 +73,9 @@ export class AppUtils {
   }
 
   public static extractErrorMessage(e: any): string {
-    let message = e.response?.data?.msg
-    message = message || e.message
-    return message || e
+    let message = e.response?.data?.msg;
+    message = message || e.message;
+    return message || e;
   }
 
   public static sort (items: any, orderBy: string, order = 'ASC') {
@@ -91,5 +91,27 @@ export class AppUtils {
       }
       return 0
     })
+  }
+
+  public static stringify(obj: any) {
+    let cache: any = [];
+    let str: any = JSON.stringify(obj, function(key, value) {
+      if (typeof value === "object" && value !== null) {
+        if (cache.indexOf(value) !== -1) {
+          // Circular reference found, discard key
+          return;
+        }
+        // Store value in our collection
+        cache.push(value);
+      }
+      return value;
+    });
+    cache = null; // reset the cache
+    return str;
+  }
+
+  public static validateJson(obj: any) {
+    const cleanedObject = AppUtils.stringify(obj);
+    return JSON.parse(cleanedObject);
   }
 }

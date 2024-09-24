@@ -25,6 +25,7 @@ export class OportunityComponent implements OnInit {
         delete o.__v;
         o.ordersRequest = JSON.stringify(o.ordersRequest) || '';
         o.ordersResponse = JSON.stringify(o.ordersResponse) || '';
+        o.error = JSON.stringify(o.error) || '';
         return o;
       });
       this.show = true;

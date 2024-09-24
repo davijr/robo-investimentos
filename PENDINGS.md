@@ -1,7 +1,13 @@
 
-A ÚNICA COISA:
-[ ] Melhorar tela de oportunidades no front-end
+# A ÚNICA COISA
+[ ] Bug na linha 103 da classe OrderService
 
+
+[ ] BUGs
+  [ ] Dinheiro tá sumindo.
+  [ ] Saldo da carteira ñ tá atualizando rápido.
+  [ ] BUG: Robô não para quando pede pra parar.
+[ ] Buscar informação da ORDER até que o status seja FILLED
 
 
 
@@ -9,6 +15,8 @@ A ÚNICA COISA:
 
 
 # ÚLTIMAS MUDANÇAS
+
+[x] Melhorar tela de oportunidades no front-end
 [x] Criar validação de preço e quantidade antes de efetuar a transação.
   [x] Identificar local exato da validação
   [x] Implementar o método

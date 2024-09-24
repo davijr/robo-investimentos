@@ -21,4 +21,8 @@ export class RobotService {
   setRobotStatus (status: string): Observable<any> {
     return this.api.postRequest(`${this.BASE_URL}status/${status}`, {}).pipe(take(1))
   }
+
+  addMoney(): Observable<any> {
+    return this.api.postRequest(`${this.BASE_URL}add-money`, {}).pipe(take(1));
+  }
 }

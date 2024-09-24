@@ -1,6 +1,5 @@
 import '@config/environment';
 import logger from '@config/logger';
-import { ExchangeService } from '@services/ExchangeService';
 import { RobotService } from '@services/RobotService';
 import axios from 'axios';
 import bodyParser from 'body-parser';
@@ -21,11 +20,11 @@ const app = express();
 
 async function setInterceptors() {
   axios.interceptors.request.use(request => {
-    logger.info(`# REQUEST: ${JSON.stringify(request.url, null, 2)}`);
+    logger.info(`# REQUEST: ${request.method?.toUpperCase()} ${request.url}`);
     return request;
   });
   axios.interceptors.response.use(response => {
-    logger.info(`# RESPONSE STATUS: ${JSON.stringify(response.status, null, 2)}`);
+    logger.info(`# RESPONSE STATUS: ${response.status}`);
     return response;
   });
 }
@@ -39,6 +38,7 @@ async function initRobot() {
 async function initDatabase() {
   try {
     mongoose.connect(`${process.env.MONGODB_URL}`);
+    mongoose.set('debug', process.env.NODE_ENV?.includes('dev'));
     // const exchangeService = new ExchangeService();
     // await exchangeService.getUpdateExchange();
   } catch (error) {

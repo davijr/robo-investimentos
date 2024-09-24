@@ -46,4 +46,12 @@ robotRoutes.get('/pairs', async (req: any, res: any) => {
   }
 })
 
+robotRoutes.post('/add-money', async (req: any, res: any) => {
+  try {
+    return res.status(200).json(await robotService.addMoney());
+  } catch (message) {
+    return res.status(400).json({ message });
+  }
+});
+
 export default robotRoutes

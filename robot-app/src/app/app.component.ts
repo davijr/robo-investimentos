@@ -38,4 +38,9 @@ export class AppComponent {
         .subscribe(result => { this.robotStatus = result });
     // this.onRefresh();
   }
+
+  addMoney() {
+    this.robotService.addMoney().pipe(take(1))
+      .subscribe(() => {});
+  }
 }

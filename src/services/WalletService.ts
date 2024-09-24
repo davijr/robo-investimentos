@@ -18,7 +18,7 @@ export class WalletService {
 
   async getAccountInfo () {
     const account: any = await Account.findOne();
-    const updateInterval = AppUtils.diffMinutes(account?.lastUpdate);
+    const updateInterval = AppUtils.diffSec(account?.lastUpdate);
     if (account && updateInterval < settings.myTradesUpdateInterval) {
       return account.account[0];
     } else if (account) {

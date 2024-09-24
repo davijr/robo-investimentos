@@ -4,9 +4,11 @@ import { AppConstants } from '@utils/AppContants';
 import { AppUtils } from '@utils/AppUtils';
 import axios from 'axios';
 
+// memory
+let settings: any;
+
 export class ExchangeService {
   API_URL = process.env.API_URL;
-  EXCHANGE_UPDATE_INTERVAL = 60; // minutos
 
   async get (exchange?: any) {
     if (!exchange) {
@@ -28,10 +30,14 @@ export class ExchangeService {
     return await exchange.save();
   }
 
+  setSettings(settingsParam: any) {
+    settings = settingsParam;
+  }
+
   async getUpdateExchange() {
     let exchange: any = await Exchange.findOne();
-    const diff = AppUtils.diffMinutes(exchange?.lastUpdate) || 999;
-    if (!exchange || diff > this.EXCHANGE_UPDATE_INTERVAL) {
+    const diff = AppUtils.diffSec(exchange?.lastUpdate) || 999;
+    if (!exchange || diff > settings.exchangeUpdateInterval) {
       logger.info('Atualizando informações da exchange (Binance).');
       if (!exchange) {
         exchange = new Exchange({});

@@ -17,7 +17,9 @@ const schema = new mongoose.Schema({
   amount: Number,
   myTradesUpdateInterval: Number,
   accountUpdateInterval: Number,
-  lastUpdate: Number
+  exchangeUpdateInterval: Number,
+  lastUpdate: Number,
+  attemptIntervals: Array
 })
 
 export default mongoose.model('Settings', schema);

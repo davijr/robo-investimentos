@@ -5,9 +5,9 @@
   "main": "index.js",
   "scripts": {
     "dev": "SET NODE_ENV=dev && ts-node-dev -r tsconfig-paths/register --respawn --transpile-only --ignore-watch node_modules --no-notify src/server.ts",
-    "debug:dev": "SET NODE_ENV=dev && nodemon src/server.ts",
-    "debug:test": "SET NODE_ENV=test && nodemon src/server.ts",
-    "dev:mac": "export NODE_ENV=dev && nodemon src/server.ts",
+    "debug:dev": "SET NODE_ENV=dev && nodemon src/server.ts | npx pino-pretty",
+    "debug:test": "SET NODE_ENV=test && nodemon src/server.ts | npx pino-pretty",
+    "dev:mac": "export NODE_ENV=dev && nodemon src/server.ts | npx pino-pretty",
     "start": "export NODE_ENV=dev && node dist/server.js",
     "start:test": "export NODE_ENV=test && node dist/server.js",
     "start:windows": "SET NODE_ENV=dev && node dist/server.js",

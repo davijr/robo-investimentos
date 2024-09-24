@@ -11,9 +11,13 @@
                 (click)="setRobotStatus('ACTIVE')" *ngIf="robotStatus === 'STOPPED'">
                 <mat-icon>toggle_off</mat-icon>
             </button>
-            <button mat-fab color="secondary" tooltip="Reset" aria-label="Reset"
+            <button mat-fab color="primary" tooltip="Reset" aria-label="Reset"
                 (click)="setRobotStatus('STOPPED')">
-                <mat-icon>toggle_off</mat-icon>
+                <mat-icon>settings_backup_restore</mat-icon>
+            </button>
+            <button mat-fab color="primary" tooltip="Add Money" aria-label="Add Money"
+                (click)="addMoney()">
+                <mat-icon>attach_money</mat-icon>
             </button>
         </h1>
         <div>
