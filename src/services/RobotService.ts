@@ -398,7 +398,8 @@ export class RobotService {
         let order1: any = await orderService.newOrder(newOrder1);
 
         if (order1) {
-          if (order1.status !== 'FILLED') {
+          if ([OrderStatusEnum.NEW, OrderStatusEnum.PARTIALLY_FILLED].includes(order1.status)) {
+            oportunity.ordersResponse.push(AppUtils.validateJson(order1));
             order1 = await orderService.getFinalStatus(order1);
           }
           if (order1.status === OrderStatusEnum.FILLED) {
@@ -420,7 +421,8 @@ export class RobotService {
             let order2: any = await orderService.newOrder(newOrder2);
 
             if (order2) {
-              if (order1.status !== 'FILLED') {
+              if ([OrderStatusEnum.NEW, OrderStatusEnum.PARTIALLY_FILLED].includes(order2.status)) {
+                oportunity.ordersResponse.push(AppUtils.validateJson(order2));
                 order2 = await orderService.getFinalStatus(order2);
               }
               if (order2.status === OrderStatusEnum.FILLED) {
@@ -440,6 +442,7 @@ export class RobotService {
 
                 if (order3) {
                   if ([OrderStatusEnum.NEW, OrderStatusEnum.PARTIALLY_FILLED].includes(order3.status)) {
+                    oportunity.ordersResponse.push(AppUtils.validateJson(order3));
                     order3 = await orderService.getFinalStatus(order3);
                   }
                   if (order3.status === OrderStatusEnum.FILLED) {
@@ -459,7 +462,10 @@ export class RobotService {
                     NotificationService.playSound(NotificationSoundType.COMPLETED);
                     logger.info('################### OPERAÇÃO COMPLETADA ####################');
                     logger.info('##################### ESPERAR 1 MINUTO #####################');
+
+                    // TODO NÃO TÁ ESPERANDO !!!!!!!!!!!!
                     await AppUtils.sleep(settings.stopTimeAfterFinish);
+
                     await this.setRobotStatus(RobotStatusEnum.SEARCHING);
                   } else {
                     await this.runError(OportunityStatusEnum.ERROR_ORDER3, {}, oportunity);
