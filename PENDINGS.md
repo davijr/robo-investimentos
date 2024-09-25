@@ -1,6 +1,7 @@
 
 # A ÚNICA COISA
-[ ] Bug na linha 103 da classe OrderService
+
+[ ] Problema Time Sync -> https://github.com/ccxt/ccxt/issues/850#issuecomment-381308373
 
 
 [ ] BUGs
@@ -16,6 +17,7 @@
 
 # ÚLTIMAS MUDANÇAS
 
+[x] Bug na linha 103 da classe OrderService
 [x] Melhorar tela de oportunidades no front-end
 [x] Criar validação de preço e quantidade antes de efetuar a transação.
   [x] Identificar local exato da validação

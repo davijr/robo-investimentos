@@ -104,7 +104,7 @@ export class OrderService {
       if ([OrderStatusEnum.FILLED, OrderStatusEnum.CANCELED, OrderStatusEnum.REJECTED].includes(order?.status)) {
         return order;
       }
-      logger.info(`## Aguardando ordem ser preenchida. Intervalo: ${interval} segundo(s). ORDER STATUS: ${order.status}.}`);
+      logger.info(`## Aguardando ordem ser preenchida. Intervalo: ${interval} segundo(s). ORDER STATUS: ${order.status}.`);
       await AppUtils.sleep(interval);
     }
     const error = `!! ERRO: A ordem não foi preenchida. ORDER ID: ${order._id}`;
