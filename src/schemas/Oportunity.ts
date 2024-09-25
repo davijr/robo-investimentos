@@ -4,7 +4,11 @@ import mongoose from "mongoose";
 // https://transform.tools/json-to-mongoose
 
 const schema = new mongoose.Schema({
-    key: String, // USDCUSDT_PENDLEUSDC_PENDLEUSDT_1.0075079448576885
+    key: { // ex: USDCUSDT_PENDLEUSDC_PENDLEUSDT_1.0075079448576885
+        type: String,
+        required: true,
+        index: true // ---Index----
+    },
     strategy: String,
     timeFirstOffer: Number,
     duration: Number, // seconds
@@ -23,8 +27,7 @@ const schema = new mongoose.Schema({
             'ERROR_OTHER'
         ]
     },
-    errorMessage: String,
-    error: [mongoose.Schema.Types.Mixed]
-});
+    error: String
+}, { timestamps: true });
 
 export default mongoose.model('Oportunity', schema);

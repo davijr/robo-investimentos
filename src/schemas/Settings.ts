@@ -20,6 +20,6 @@ const schema = new mongoose.Schema({
   exchangeUpdateInterval: Number,
   lastUpdate: Number,
   attemptIntervals: Array
-})
+}, { timestamps: true });
 
 export default mongoose.model('Settings', schema);

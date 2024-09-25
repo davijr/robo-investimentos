@@ -7,6 +7,6 @@ const schema = new mongoose.Schema({
     lastUpdate: Number,
     symbol: String,
     trades: [mongoose.Schema.Types.Mixed] // Tipo any
-});
+}, { timestamps: true });
 
 export default mongoose.model('Trade', schema);

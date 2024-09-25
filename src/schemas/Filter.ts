@@ -13,6 +13,6 @@ const schema = new mongoose.Schema({
     "tickSize": {
         "type": "String"
     }
-})
+}, { timestamps: true });
 
 export default mongoose.model('Filter', schema)

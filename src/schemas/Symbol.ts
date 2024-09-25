@@ -76,6 +76,6 @@ const schema = new mongoose.Schema({
         "String"
         ]
     }
-})
+}, { timestamps: true });
 
 export default mongoose.model('Symbol', schema)

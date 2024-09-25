@@ -6,6 +6,6 @@ import mongoose from "mongoose";
 const schema = new mongoose.Schema({
     lastUpdate: Number,
     account: [mongoose.Schema.Types.Mixed] // Tipo any
-});
+}, { timestamps: true });
 
 export default mongoose.model('Account', schema);

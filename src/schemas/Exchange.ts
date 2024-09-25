@@ -24,6 +24,6 @@ const schema = new mongoose.Schema({
         ]
     },
     lastUpdate: Number
-})
+}, { timestamps: true });
 
 export default mongoose.model('Exchange', schema)
