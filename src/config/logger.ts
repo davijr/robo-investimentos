@@ -7,8 +7,8 @@ const logger = pino({
     options: {
       colorize: true,
       translateTime: 'SYS:standard',
-      ignore: 'pid,hostname',
-      singleLine: false
+      // ignore: 'pid,hostname',
+      // singleLine: false
     }
   }
 })

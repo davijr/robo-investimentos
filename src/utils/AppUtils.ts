@@ -75,7 +75,7 @@ export class AppUtils {
   public static extractErrorMessage(e: any): string {
     let message = e.response?.data?.msg;
     message = message || e.message;
-    return message || e;
+    return message || AppUtils.stringify(e);
   }
 
   public static sort (items: any, orderBy: string, order = 'ASC') {

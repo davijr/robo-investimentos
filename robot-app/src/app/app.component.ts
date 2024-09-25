@@ -39,6 +39,11 @@ export class AppComponent {
     // this.onRefresh();
   }
 
+  resetRobot() {
+    this.setRobotStatus('STOPPED');
+    this.setRobotStatus('ACTIVE');
+  }
+
   addMoney() {
     this.robotService.addMoney().pipe(take(1))
       .subscribe(() => {});

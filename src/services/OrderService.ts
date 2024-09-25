@@ -100,11 +100,11 @@ export class OrderService {
   async getFinalStatus(order: any): Promise<string> {
     for (const interval of settings.attemptIntervals) {
       logger.info(`ORDER STATUS: ${order.status}`);
-      const orderSearch = await binance.get(this.orderUrl, { orderId: order?.orderId });
-      if ([OrderStatusEnum.FILLED, OrderStatusEnum.CANCELED, OrderStatusEnum.REJECTED].includes(orderSearch?.status)) {
-        return orderSearch;
+      order = await binance.get(this.orderUrl, { symbol: order?.symbol, orderId: order?.orderId });
+      if ([OrderStatusEnum.FILLED, OrderStatusEnum.CANCELED, OrderStatusEnum.REJECTED].includes(order?.status)) {
+        return order;
       }
-      logger.info(`## Aguardando ordem ser preenchida. Intervalo: ${interval} segundo(s). ORDER STATUS: ${orderSearch.status}.}`);
+      logger.info(`## Aguardando ordem ser preenchida. Intervalo: ${interval} segundo(s). ORDER STATUS: ${order.status}.}`);
       await AppUtils.sleep(interval);
     }
     const error = `!! ERRO: A ordem não foi preenchida. ORDER ID: ${order._id}`;
