@@ -15,7 +15,8 @@
     "start:prod": "SET NODE_ENV=prod && node dist/server.js",
     "test": "jest --watch",
     "build": "babel src --extensions \".js,.ts\" --out-dir dist --copy-files --no-copy-ignored",
-    "build:prod": "SET NODE_ENV=prod && babel src --extensions \".js,.ts\" --out-dir dist --copy-files --no-copy-ignored",
+    "build:prod": "export NODE_ENV=prod && babel src --extensions \".js,.ts\" --out-dir dist --copy-files --no-copy-ignored",
+    "build:prod:windows": "SET NODE_ENV=prod && babel src --extensions \".js,.ts\" --out-dir dist --copy-files --no-copy-ignored",
     "start:full": "cd robot-app && npm run build && cd .. && npm start",
     "lib:book": "SET NODE_ENV=test && node src/libs/websocket-book.js"
   },
