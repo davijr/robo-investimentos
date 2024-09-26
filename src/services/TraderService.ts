@@ -1,8 +1,8 @@
-import { RobotStatusEnum } from "src/enum/RobotStatusEnum"
+import { RobotStatusEnum } from "@enum/RobotStatusEnum"
 import { RobotService } from "./RobotService"
 import logger from "@config/logger";
-import { OrderTypeEnum } from "src/enum/OrderTypeEnum";
-import { OrderSideEnum } from "src/enum/OrderSideEnum";
+import { OrderTypeEnum } from "@enum/OrderTypeEnum";
+import { OrderSideEnum } from "@enum/OrderSideEnum";
 import { OrderService } from "./OrderService";
 import { NotificationService, NotificationSoundType } from "./NotificationService";
 import { AppUtils } from "@utils/AppUtils";

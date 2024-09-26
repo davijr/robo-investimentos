@@ -1,6 +1,6 @@
 import Settings from "@schemas/Settings";
 import { AppConstants } from "@utils/AppContants";
-import { RobotStatusEnum } from "src/enum/RobotStatusEnum";
+import { RobotStatusEnum } from "@enum/RobotStatusEnum";
 
 export class SettingsService {
 

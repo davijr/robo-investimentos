@@ -1,8 +1,8 @@
 import logger from '@config/logger';
 import { AppConstants } from '@utils/AppContants';
 import { AppUtils } from '@utils/AppUtils';
-import { OrderSideEnum } from 'src/enum/OrderSideEnum';
-import { OrderTypeEnum } from 'src/enum/OrderTypeEnum';
+import { OrderSideEnum } from '@enum/OrderSideEnum';
+import { OrderTypeEnum } from '@enum/OrderTypeEnum';
 import WebSocket from 'ws';
 import { RobotStatusEnum } from '../enum/RobotStatusEnum';
 import { ExchangeService } from './ExchangeService';
@@ -11,8 +11,8 @@ import { OportunityService } from './OportunityService';
 import { OrderService } from './OrderService';
 import { SettingsService } from './SettingsService';
 import { WalletService } from './WalletService';
-import { OportunityStatusEnum } from 'src/enum/OportunityStatusEnum';
-import { OrderStatusEnum } from 'src/enum/OrderStatusEnum';
+import { OportunityStatusEnum } from '@enum/OportunityStatusEnum';
+import { OrderStatusEnum } from '@enum/OrderStatusEnum';
 
 const oportunityService = new OportunityService();
 const orderService = new OrderService();
@@ -33,6 +33,7 @@ export class RobotService {
     orderService.setSettings(settings);
     walletSettings.setSettings(settings);
     const lastStatus = settings.status;
+    logger.info(`# Settings carregada: ${AppUtils.stringify(settings)}`);
     await this.setRobotStatus(RobotStatusEnum.PREPARING);
     await this.processPairs();
     await this.setRobotStatus(lastStatus);
@@ -178,6 +179,9 @@ export class RobotService {
       let priceBuy2 = book[candidate.buy2.symbol]?.ask;
       let priceSell = book[candidate.sell.symbol]?.bid;
       const crossRate = (1 / priceBuy1) * (1 / priceBuy2) * priceSell;
+      // if (crossRate > 1.00075) {
+      //   logger.warn('crossRate: ' + crossRate);
+      // }
       if (crossRate > settings.profitability && priceBuy1 && priceBuy2 && priceSell) {
         const qty1 = settings.amount / priceBuy1;
         const qty2 = qty1 / priceBuy2;
@@ -214,6 +218,9 @@ export class RobotService {
       const priceSell1 = book[candidate.sell1.symbol]?.bid;
       const priceSell2 = book[candidate.sell2.symbol]?.bid;
       const crossRate = (1 / priceBuy) * priceSell1 * priceSell2;
+      if (crossRate > 1.00075) {
+        logger.warn('crossRate: ' + crossRate);
+      }
       if (crossRate > settings.profitability && priceBuy && priceSell1 && priceSell2) {
         const qty1 = settings.amount / priceBuy;
         const qty2 = qty1;
@@ -245,12 +252,14 @@ export class RobotService {
 
   private hasInvalidParams(symbols: any[]) {
     if (symbols.some(i => !i.symbol || !i.quantity || !i.price)) {
+      logger.warn('Encontrada uma oportunidade, porém, a triangulação possui parâmetros inválidos.');
       return true;
     }
     const qty3 = symbols[2].quantity * symbols[2].price;
     const profitability = (qty3 - settings.amount) / settings.amount;
     const hasProfit = profitability > 0;
     if (!hasProfit) {
+      logger.warn('Encontrada uma oportunidade, porém, o resultado esperado parece ser lucrativo.');
       return true;
     }
     return false;

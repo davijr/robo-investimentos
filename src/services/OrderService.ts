@@ -4,7 +4,7 @@ import Trade from '@schemas/Trade';
 import { AppUtils } from '@utils/AppUtils';
 import { OrderTypeEnum } from '../enum/OrderTypeEnum';
 import { BinanceApi } from './BinanceApi';
-import { OrderStatusEnum } from 'src/enum/OrderStatusEnum';
+import { OrderStatusEnum } from '@enum/OrderStatusEnum';
 
 const binance = new BinanceApi();
 

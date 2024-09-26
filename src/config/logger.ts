@@ -11,6 +11,13 @@ const logger = pino({
       // singleLine: false
     }
   }
-})
+});
+
+// const transport = pino.transport({
+//   target: 'pino/file',
+//   options: { destination: process.env.LOG_FILE }
+// });
+
+// pino.transport(transport);
 
 export default logger

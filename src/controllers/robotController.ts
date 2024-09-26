@@ -1,6 +1,6 @@
 import express from 'express'
 import { RobotService } from '@services/RobotService'
-import { RobotStatusEnum } from 'src/enum/RobotStatusEnum'
+import { RobotStatusEnum } from '@enum/RobotStatusEnum'
 
 const robotRoutes = express.Router()
 
