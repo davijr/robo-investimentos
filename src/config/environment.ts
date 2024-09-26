@@ -3,10 +3,10 @@ import logger from './logger'
 
 (() => {
   const env = ''.concat(process.env.NODE_ENV as string).trim()
-  if (env) {
+  if (env && env !== 'prod') {
     logger.info(`NODE_ENV=${env}`)
     dotenv.config({ path: `.env-${env}` })
-  } else if (env === 'production' || !env) {
+  } else if (env === 'prod' || !env) {
     dotenv.config()
   }
 })()
