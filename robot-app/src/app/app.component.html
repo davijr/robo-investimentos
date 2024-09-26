@@ -1,0 +1,35 @@
+
+<div class="app-container">
+    <nav>
+        <h1>
+            Robot
+            <button mat-fab color="primary" tooltip="Stop" aria-label="Stop" class="ng-btn-lg"
+                (click)="setRobotStatus('STOPPED')" *ngIf="robotStatus === 'ACTIVE'">
+                <mat-icon>toggle_on</mat-icon>
+            </button>
+            <button mat-fab color="light" tooltip="Activate" aria-label="Activate"
+                (click)="setRobotStatus('ACTIVE')" *ngIf="robotStatus === 'STOPPED'">
+                <mat-icon>toggle_off</mat-icon>
+            </button>
+            <button mat-fab color="primary" tooltip="Reset" aria-label="Reset"
+                (click)="resetRobot()">
+                <mat-icon>settings_backup_restore</mat-icon>
+            </button>
+            <button mat-fab color="primary" tooltip="Add Money" aria-label="Add Money"
+                (click)="addMoney()">
+                <mat-icon>attach_money</mat-icon>
+            </button>
+        </h1>
+        <div>
+            <button mat-button color="primary" [ngClass]="{'active': isActive('panel')}" [routerLink]="['/panel']">Panel</button>
+            <button mat-button color="primary" [ngClass]="{'active': isActive('prices')}" [routerLink]="['/prices']">Prices</button>
+            <button mat-button color="primary" [ngClass]="{'active': isActive('orders')}" [routerLink]="['/orders']">Orders</button>
+            <button mat-button color="primary" [ngClass]="{'active': isActive('oportunity')}" [routerLink]="['/oportunity']">Oportunities</button>
+            <button mat-button color="primary" [ngClass]="{'active': isActive('settings')}" [routerLink]="['/settings']">Settings</button>
+        </div>
+    </nav>
+    <div class="content">
+        <router-outlet></router-outlet>
+        <br>
+    </div>
+</div>

@@ -1,0 +1,15 @@
+<div style="margin-top: 1rem" *ngIf="form">
+    <hr>
+    <h4><b>DEBUG FORM:</b></h4>
+    <alert type="success" *ngIf="form.valid">
+        <strong>FORM VALID!</strong>
+    </alert>
+    <alert type="danger" *ngIf="!form.valid">
+        <strong>FORM INVALID!</strong><br>
+        <pre>{{ fieldsWithError() | json }}</pre>
+    </alert>
+    <alert type="info">
+        Form values:<br>
+        <pre>{{ form.value | json }}</pre>
+    </alert>
+</div>

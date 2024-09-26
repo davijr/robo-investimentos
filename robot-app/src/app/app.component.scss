@@ -1,0 +1,33 @@
+.app-container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+
+    nav {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background-color: var(--secondary);
+        height: 6rem;
+        margin-top: 0.5rem; // TODO remover
+
+        h1 {
+            font-weight: 700;
+            color: rgb(175, 23, 23);
+            margin-top: 2rem;
+            button, span {
+                margin-left: 2rem;
+            }
+        }
+
+        div {
+            display: flex;
+            gap: 1rem;
+            
+            .active {
+                background-color: rgb(255, 198, 217);
+            }
+        }
+    }
+
+}
