@@ -259,7 +259,7 @@ export class RobotService {
     const profitability = (qty3 - settings.amount) / settings.amount;
     const hasProfit = profitability > 0;
     if (!hasProfit) {
-      logger.warn('Encontrada uma oportunidade, porém, o resultado esperado parece ser lucrativo.');
+      logger.warn('Encontrada uma oportunidade, porém, o resultado proposto não parece ser lucrativo.');
       return true;
     }
     return false;
@@ -317,10 +317,10 @@ export class RobotService {
           case "NOTIONAL":
             const notional = price * quantity;
             if (notional < Number(filter.minNotional)) {
-              this.runFilterError(filter.filterType, `price: ${price} * quantity: ${quantity} < minNotional: ${filter.minNotional}`);
+              this.runFilterError(filter.filterType, `price: ${price} * quantity: ${quantity} = notional: ${notional} < minNotional: ${filter.minNotional}`);
             }
             if (notional > Number(filter.maxNotional)) {
-              this.runFilterError(filter.filterType, `price: ${price} * quantity: ${quantity} > maxNotional: ${filter.maxNotional}`);
+              this.runFilterError(filter.filterType, `price: ${price} * quantity: ${quantity} = notional: ${notional} > maxNotional: ${filter.maxNotional}`);
             }
             break;
         }
@@ -414,6 +414,7 @@ export class RobotService {
           if (order1.status === OrderStatusEnum.FILLED) {
             oportunity.ordersResponse = [];
             oportunity.ordersResponse.push(AppUtils.validateJson(order1));
+            oportunity.initialValue = order1.cummulativeQuoteQty;
             await oportunityService.update(oportunity);
             // logger.info('ORDER 1', JSON.stringify(order1));
 
