@@ -16,7 +16,7 @@ export class AppConstants {
     static readonly MIN_DAILY_VOLUME = 1000000; // volume diário mínimo: 1 milhão
     static readonly PROFITABILITY = 1.002; // 1.00075 é a taxa Binance = 0,075% quando tem BNB. Ou 0,1% se não tiver BNB na conta
     static readonly AMOUNT = 10; // em USDT qtd a ser negociada
-    static readonly ATTEMPT_INTERVALS = [1, 5, 15, 30, 60, 60, 60, 60, 60]; // intervalo em segundos que o robô vai aguardar a ordem ser FILLED
+    static readonly ATTEMPT_INTERVALS = [1, 5, 15, 30, 60, 60, 60, 60, 60, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300]; // intervalo em segundos que o robô vai aguardar a ordem ser FILLED
     static readonly EXCLUDE_SYMBOLS = [];
     static readonly INCLUDE_SYMBOLS = [
         // "ARKMBNB",

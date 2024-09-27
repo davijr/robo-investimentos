@@ -18,7 +18,6 @@ export class SettingsService {
         stopTimeAfterFinish: AppConstants.STOP_TIME_AFTER_FINISH,
         includeSymbols: AppConstants.INCLUDE_SYMBOLS,
         excludeSymbols: AppConstants.EXCLUDE_SYMBOLS,
-        lastUpdate: new Date().getTime(),
         attemptIntervals: AppConstants.ATTEMPT_INTERVALS
       });
       return await newSettings.save();
@@ -34,7 +33,6 @@ export class SettingsService {
     Object.keys(newSettings).forEach(key => {
       settings[key] = newSettings[key]
     });
-    settings.lastUpdate = new Date().getTime();
     return await settings.save();
   }
 
@@ -43,6 +41,10 @@ export class SettingsService {
     settings.status = status;
     settings.lastUpdate = new Date().getTime();
     return await settings.save().status;
+  }
+
+  async updateField(settings: any, field: string, value: any) {
+    return await settings.save();
   }
 
 }

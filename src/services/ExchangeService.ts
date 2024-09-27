@@ -3,6 +3,9 @@ import Exchange from '@schemas/Exchange';
 import { AppConstants } from '@utils/AppContants';
 import { AppUtils } from '@utils/AppUtils';
 import axios from 'axios';
+import { SettingsService } from './SettingsService';
+
+const settingsService = new SettingsService();
 
 // memory
 let settings: any;
@@ -36,17 +39,18 @@ export class ExchangeService {
 
   async getUpdateExchange() {
     let exchange: any = await Exchange.findOne();
-    const diff = AppUtils.diffSec(exchange?.lastUpdate) || 999;
+    const diff = AppUtils.diffSec(exchange?.updatedAt) || 999;
     if (!exchange || diff > settings.exchangeUpdateInterval) {
       logger.info('Atualizando informações da exchange (Binance).');
       if (!exchange) {
         exchange = new Exchange({});
       }
-      exchange = await this.getExchangeInfoApi();
-      exchange.lastUpdate = new Date().getTime();
+      const exchangeInfo = await this.getExchangeInfoApi();
+      exchange.symbols = this.filterSymbols(exchangeInfo);
       await this.update(exchange);
+      await settingsService.updateField(settings, 'exchangeUpdateInterval', new Date().getTime());
     }
-    return this.filterSymbols(exchange);
+    return exchange.symbols;
   }
 
   async getExchangeInfoApi() {

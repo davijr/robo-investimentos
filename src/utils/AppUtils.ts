@@ -73,7 +73,11 @@ export class AppUtils {
   }
 
   public static getTimestamp(): string {
-    return moment().format('YYYYMMDDhhmmss');
+    return moment().format('YYYYMMDDHHmmss');
+  }
+
+  public static getHourTimestamp(): string {
+    return moment().format('YYYYMMDDHH') + '0000';
   }
 
   public static extractErrorMessage(e: any): string {

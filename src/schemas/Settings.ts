@@ -18,7 +18,6 @@ const schema = new mongoose.Schema({
   myTradesUpdateInterval: Number,
   accountUpdateInterval: Number,
   exchangeUpdateInterval: Number,
-  lastUpdate: Number,
   attemptIntervals: Array
 }, { timestamps: true });
 
