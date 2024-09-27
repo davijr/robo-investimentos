@@ -46,8 +46,8 @@ export class RobotService {
     if (settings.robotStatus !== RobotStatusEnum.ERROR) {
       await this.setRobotStatus(RobotStatusEnum.SEARCHING);
       this.createWebSocket(async (event: any) => {
+        this.parseStream(event);
         if (![RobotStatusEnum.STOPPED, RobotStatusEnum.TRADING, RobotStatusEnum.ERROR, RobotStatusEnum.PREPARING].includes(settings.robotStatus)) {
-          this.parseStream(event);
           this.processBuyBuySell();
           this.processBuySellSell();
         }
@@ -173,15 +173,15 @@ export class RobotService {
   }
 
   async processBuyBuySell() {
-    logger.info('Process BBS - ' + new Date().toLocaleString());
+    // logger.info('Process BBS - ' + new Date().toLocaleString());
     pairs?.buyBuySell?.combinations?.forEach(async (candidate: any) => {
       let priceBuy1 = book[candidate.buy1.symbol]?.ask;
       let priceBuy2 = book[candidate.buy2.symbol]?.ask;
       let priceSell = book[candidate.sell.symbol]?.bid;
       const crossRate = (1 / priceBuy1) * (1 / priceBuy2) * priceSell;
-      // if (crossRate > 1.00075) {
-      //   logger.warn('crossRate: ' + crossRate);
-      // }
+      if (crossRate > 1.00075) {
+        logger.warn('crossRate: ' + crossRate);
+      }
       if (crossRate > settings.profitability && priceBuy1 && priceBuy2 && priceSell) {
         const qty1 = settings.amount / priceBuy1;
         const qty2 = qty1 / priceBuy2;
@@ -212,7 +212,7 @@ export class RobotService {
   }
 
   async processBuySellSell() {
-    logger.info('Process BSS - ' + new Date().toLocaleString());
+    // logger.info('Process BSS - ' + new Date().toLocaleString());
     pairs?.buySellSell?.combinations?.forEach(async (candidate: any) => {
       const priceBuy = book[candidate.buy.symbol]?.ask;
       const priceSell1 = book[candidate.sell1.symbol]?.bid;
@@ -277,10 +277,10 @@ export class RobotService {
         switch (filter.filterType) {
           case "PRICE_FILTER":
             if (price < Number(filter.minPrice)) {
-              this.runFilterError(filter.filterType, 'minPrice');
+              this.runFilterError(filter.filterType, `price: ${price} < minPrice: ${filter.minPrice}`);
             }
             if (price > Number(filter.maxPrice)) {
-              this.runFilterError(filter.filterType, 'maxPrice');
+              this.runFilterError(filter.filterType, `price: ${price} > maxPrice: ${filter.maxPrice}`);
             }
             price = this.handleTickSize(price, Number(filter.tickSize));
             break;
@@ -307,20 +307,20 @@ export class RobotService {
             break; */
           case "LOT_SIZE":
             if (quantity < Number(filter.minQty)) {
-              this.runFilterError(filter.filterType, 'minQty');
+              this.runFilterError(filter.filterType, `quantity: ${quantity} < minQty: ${filter.minQty}`);
             }
             if (quantity > Number(filter.maxQty)) {
-              this.runFilterError(filter.filterType, 'maxQty');
+              this.runFilterError(filter.filterType, `quantity: ${quantity} > maxQty: ${filter.maxQty}`);
             }
             quantity = this.handleTickSize(quantity, Number(filter.stepSize));
             break;
           case "NOTIONAL":
             const notional = price * quantity;
             if (notional < Number(filter.minNotional)) {
-              this.runFilterError(filter.filterType, 'minNotional');
+              this.runFilterError(filter.filterType, `price: ${price} * quantity: ${quantity} < minNotional: ${filter.minNotional}`);
             }
             if (notional > Number(filter.maxNotional)) {
-              this.runFilterError(filter.filterType, 'maxNotional');
+              this.runFilterError(filter.filterType, `price: ${price} * quantity: ${quantity} > maxNotional: ${filter.maxNotional}`);
             }
             break;
         }

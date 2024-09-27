@@ -72,6 +72,10 @@ export class AppUtils {
     return moment(date2).diff(date1, type);
   }
 
+  public static getTimestamp(): string {
+    return moment().format('YYYYMMDDhhmmss');
+  }
+
   public static extractErrorMessage(e: any): string {
     let message = e.response?.data?.msg;
     message = message || e.message;
