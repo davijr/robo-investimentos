@@ -207,6 +207,8 @@ export class RobotService {
           logger.info(`Oportunidade BBS em ${symbols.map(i => i.symbol).join(' > ')} = ${crossRate}.`);
           await this.executeStrategy(oportunidade);
         }
+      } else if (crossRate > 1.00075) {
+        logger.warn(`BBS - ${candidate.buy1.symbol} > ${candidate.buy2.filters} > ${candidate.sell.filters} = crossRate: ${crossRate}`);
       }
     });
   }
@@ -218,9 +220,6 @@ export class RobotService {
       const priceSell1 = book[candidate.sell1.symbol]?.bid;
       const priceSell2 = book[candidate.sell2.symbol]?.bid;
       const crossRate = (1 / priceBuy) * priceSell1 * priceSell2;
-      if (crossRate > 1.00075) {
-        logger.warn('crossRate: ' + crossRate);
-      }
       if (crossRate > settings.profitability && priceBuy && priceSell1 && priceSell2) {
         const qty1 = settings.amount / priceBuy;
         const qty2 = qty1;
@@ -246,6 +245,8 @@ export class RobotService {
           logger.info(`Oportunidade BSS em ${symbols.map(i => i.symbol).join(' > ')} = ${crossRate}.`);
           await this.executeStrategy(oportunidade);
         }
+      } else if (crossRate > 1.00075) {
+        logger.warn(`BSS - ${candidate.buy.symbol} > ${candidate.sell1.filters} > ${candidate.sell2.filters} = crossRate: ${crossRate}`);
       }
     });
   }
