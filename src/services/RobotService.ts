@@ -13,15 +13,19 @@ import { SettingsService } from './SettingsService';
 import { WalletService } from './WalletService';
 import { OportunityStatusEnum } from '@enum/OportunityStatusEnum';
 import { OrderStatusEnum } from '@enum/OrderStatusEnum';
+import { TickerService } from './TickerService';
 
 const oportunityService = new OportunityService();
 const orderService = new OrderService();
 const exchangeService = new ExchangeService();
 const settingsService = new SettingsService();
 const walletSettings = new WalletService();
+const tickerService = new TickerService();
 
 // memory
 let settings: any = {};
+let exchangeInfo: any = {};
+let allSymbols: any = {};
 let pairs: any = {};
 const book: any = {};
 
@@ -45,7 +49,9 @@ export class RobotService {
   async run() {
     if (settings.robotStatus !== RobotStatusEnum.ERROR) {
       await this.setRobotStatus(RobotStatusEnum.SEARCHING);
+      await this.populateOrderBook();
       this.createWebSocket(async (event: any) => {
+        logger.warn(`book.length = ${book.length}`);
         this.parseStream(event);
         if (![RobotStatusEnum.STOPPED, RobotStatusEnum.TRADING, RobotStatusEnum.ERROR, RobotStatusEnum.PREPARING].includes(settings.robotStatus)) {
           this.processBuyBuySell();
@@ -53,6 +59,20 @@ export class RobotService {
         }
       });
     }
+  }
+
+  private async populateOrderBook() {
+    const symbols = allSymbols.map((s: any) => s.symbol);
+    const result: any = await tickerService.getAll(symbols);
+    result?.forEach((element: any) => {
+      book[element.symbol] = {
+        ask: parseFloat(element.askPrice),
+        bid: parseFloat(element.bidPrice),
+        time: element.closeTime,
+        baseVolume: element.volume,
+        quoteVolume: element.quoteVolume
+      };
+    });
   }
 
   private parseStream(event: any) {
@@ -104,6 +124,10 @@ export class RobotService {
     return book;
   }
 
+  getExchangeInfo() {
+    return exchangeInfo;
+  }
+
   getPrices(assets = []) {
     const prices: any = []
     assets.forEach(asset => {
@@ -121,7 +145,8 @@ export class RobotService {
 
   async processPairs() {
     try {
-      const allSymbols: any = await exchangeService.getUpdateExchange();
+      exchangeInfo = await exchangeService.getUpdateExchange();
+      allSymbols = exchangeInfo.symbols;
       const buySymbols = allSymbols.filter((symbol: any) => symbol.quote === settings.quote);
       const buyBuySell = this.getBuyBuySell(allSymbols, buySymbols);
       const buySellSell = this.getBuySellSell(allSymbols, buySymbols);
@@ -173,20 +198,17 @@ export class RobotService {
   }
 
   async processBuyBuySell() {
-    // logger.info('Process BBS - ' + new Date().toLocaleString());
     pairs?.buyBuySell?.combinations?.forEach(async (candidate: any) => {
-      let priceBuy1 = book[candidate.buy1.symbol]?.ask;
-      let priceBuy2 = book[candidate.buy2.symbol]?.ask;
-      let priceSell = book[candidate.sell.symbol]?.bid;
+      const priceBuy1 = book[candidate.buy1.symbol]?.ask;
+      const priceBuy2 = book[candidate.buy2.symbol]?.ask;
+      const priceSell = book[candidate.sell.symbol]?.bid;
       const crossRate = (1 / priceBuy1) * (1 / priceBuy2) * priceSell;
-      if (crossRate > 1.00075) {
-        logger.warn('crossRate: ' + crossRate);
-      }
-      if (crossRate > settings.profitability && priceBuy1 && priceBuy2 && priceSell) {
+      if (crossRate > 0 && priceBuy1 && priceBuy2 && priceSell) {
+        // logger.info(`BBS - ${candidate.buy1.symbol} (${priceBuy1}) > ${candidate.buy2.symbol} (${priceBuy2}) > ${candidate.sell.symbol} (${priceSell}) = crossRate: ${crossRate}`);
         const qty1 = settings.amount / priceBuy1;
         const qty2 = qty1 / priceBuy2;
         const qty3 = qty2;
-        const symbols = [
+        const operations = [
           {
             symbol: candidate.buy1.symbol,
             ...this.doFilters('B', priceBuy1, qty1, candidate.buy1.filters)
@@ -199,54 +221,56 @@ export class RobotService {
           }
         ];
         if (settings.robotStatus === RobotStatusEnum.TRADING) {
-          logger.warn('Erro: robô em pausa, pois está operando. STATUS: TRADING');
-        } else if (!this.hasInvalidParams(symbols) && settings.robotStatus !== RobotStatusEnum.TRADING) {
+          // logger.warn('Erro: robô em pausa, pois está operando. STATUS: TRADING');
+        } else if (!this.hasInvalidParams(operations) && settings.robotStatus !== RobotStatusEnum.TRADING) {
           await this.setRobotStatus(RobotStatusEnum.TRADING);
           NotificationService.playSound(NotificationSoundType.FOUND);
-          const oportunidade = await oportunityService.create({ strategy: 'BBS', symbols, profitability: crossRate, initialValue: settings.amount, ordersRequest: symbols });
-          logger.info(`Oportunidade BBS em ${symbols.map(i => i.symbol).join(' > ')} = ${crossRate}.`);
+          const oportunidade = await oportunityService.create({ strategy: 'BBS', symbols: operations, profitability: crossRate, initialValue: settings.amount, ordersRequest: operations });
+          logger.info(`Oportunidade BBS em ${operations.map(i => i.symbol).join(' > ')} = ${crossRate}.`);
           await this.executeStrategy(oportunidade);
         }
       } else if (crossRate > 1.00075) {
-        logger.warn(`BBS - ${candidate.buy1.symbol} > ${candidate.buy2.filters} > ${candidate.sell.filters} = crossRate: ${crossRate}`);
+        logger.warn(`BBS - ${candidate.buy1.symbol} (${priceBuy1}) > ${candidate.buy2.symbol} (${priceBuy2}) > ${candidate.sell.symbol} (${priceSell}) = crossRate: ${crossRate}`);
       }
     });
   }
 
   async processBuySellSell() {
-    // logger.info('Process BSS - ' + new Date().toLocaleString());
     pairs?.buySellSell?.combinations?.forEach(async (candidate: any) => {
       const priceBuy = book[candidate.buy.symbol]?.ask;
       const priceSell1 = book[candidate.sell1.symbol]?.bid;
       const priceSell2 = book[candidate.sell2.symbol]?.bid;
       const crossRate = (1 / priceBuy) * priceSell1 * priceSell2;
-      if (crossRate > settings.profitability && priceBuy && priceSell1 && priceSell2) {
+      if (crossRate > 0 && priceBuy && priceSell1 && priceSell2) {
+        // logger.debug(`BSS - ${candidate.buy.symbol} (${priceBuy}) > ${candidate.sell1.symbol} (${priceSell1}) > ${candidate.sell2.symbol} (${priceSell2}) = crossRate: ${crossRate}`);
         const qty1 = settings.amount / priceBuy;
-        const qty2 = qty1;
-        const qty3 = qty2 * priceSell1;
-        const symbols = [
+        const qty3 = qty1 * priceSell1;
+        const operations = [
           {
             symbol: candidate.buy.symbol,
             ...this.doFilters('B', priceBuy, qty1, candidate.buy.filters)
           }, {
             symbol: candidate.sell1.symbol,
-            ...this.doFilters('S', priceSell1, qty2, candidate.sell1.filters)
+            // TODO testarrr a partir daqui
+            price: priceSell1,
+            quantity: qty1
+            // ...this.doFilters('S', priceSell1, qty1, candidate.sell1.filters)
           }, {
             symbol: candidate.sell2.symbol,
             ...this.doFilters('S', priceSell2, qty3, candidate.sell2.filters)
           }
         ];
         if (settings.robotStatus === RobotStatusEnum.TRADING) {
-          logger.warn('- Robô em pausa, pois está operando. STATUS: TRADING');
-        } else if (!this.hasInvalidParams(symbols) && settings.robotStatus !== RobotStatusEnum.TRADING) {
+          // logger.warn('- Robô em pausa, pois está operando. STATUS: TRADING');
+        } else if (!this.hasInvalidParams(operations) && settings.robotStatus !== RobotStatusEnum.TRADING) {
           await this.setRobotStatus(RobotStatusEnum.TRADING);
           NotificationService.playSound(NotificationSoundType.FOUND);
-          const oportunidade = await oportunityService.create({ strategy: 'BSS', symbols, profitability: crossRate, initialValue: settings.amount, ordersRequest: symbols });
-          logger.info(`Oportunidade BSS em ${symbols.map(i => i.symbol).join(' > ')} = ${crossRate}.`);
+          const oportunidade = await oportunityService.create({ strategy: 'BSS', symbols: operations, profitability: crossRate, initialValue: settings.amount, ordersRequest: operations });
+          logger.info(`Oportunidade BSS em ${operations.map(i => i.symbol).join(' > ')} = ${crossRate}.`);
           await this.executeStrategy(oportunidade);
         }
       } else if (crossRate > 1.00075) {
-        logger.warn(`BSS - ${candidate.buy.symbol} > ${candidate.sell1.filters} > ${candidate.sell2.filters} = crossRate: ${crossRate}`);
+        logger.warn(`BSS - ${candidate.buy.symbol} (${priceBuy}) > ${candidate.sell1.symbol} (${priceSell1}) > ${candidate.sell2.symbol} (${priceSell2}) = crossRate: ${crossRate}`);
       }
     });
   }
@@ -340,14 +364,14 @@ export class RobotService {
       */
       return { price, quantity };
     } catch(e) {
-      logger.warn('Ocorreu um erro ao processar as oportunidades BSS.' + AppUtils.extractErrorMessage(e));
+      logger.error(`Ocorreu um erro ao processar a oportunidade. Side: ${side}. ${AppUtils.extractErrorMessage(e)}`);
       // throw new Error(AppUtils.extractErrorMessage(e));
       // throw new Error();
     }
   }
 
   private runFilterError(name: string, error: string) {
-    logger.warn(`## ERRO! NÃO PASSOU NO FILTRO: ${name}. ERRO: ${error}`);
+    logger.error(`## ERRO! NÃO PASSOU NO FILTRO: ${name}. ERRO: ${error}`);
     // throw new Error(msg);
   }
 
@@ -372,11 +396,14 @@ export class RobotService {
    * @returns quantity
    */
   private handleTickSize(quantity: number, tickSize: number) {
+    tickSize = AppUtils.toFixed(tickSize);
     const beforeDot = new String(quantity).split(".")[0];
     const afterDot = new String(quantity).split(".")[1];
-    const qtyPositions = new String(tickSize).split(".")[1]?.length || 0;
+    const qtyPositions = new String(AppUtils.toFixed(tickSize)).split(".")[1]?.length || 0;
     if (!afterDot) return quantity;
-    return Number(`${beforeDot}.${afterDot.substring(0, qtyPositions).padEnd(qtyPositions, '0')}`);
+    const newNumber = Number(`${beforeDot}.${afterDot.substring(0, qtyPositions).padEnd(qtyPositions, '0')}`);
+    // logger.debug(`# handleTickSize(quantity: ${quantity}, tickSize: ${tickSize}) -> result: ${newNumber}`);
+    return newNumber;
   }
 
   /**
@@ -386,8 +413,7 @@ export class RobotService {
     const { strategy } = oportunity;
     const symbols = oportunity.ordersRequest;
     try {
-      logger.info('##################### INICIO DA OPERACAO #####################');
-      logger.info(`# INICIANDO ESTRATÉGIA DE TRIANGULAÇÃO - ${strategy} ${symbols.map((i: any) => i.symbol).join(' > ')} #####`);
+      logger.info('##################### INICÍO DA OPERAÇÃO #####################');
       logger.info(`# OPORTUNIDADE: ${oportunity.key}`);
       logger.info(`# VALOR INICIAL: ${settings.amount} ${settings.quote}`);
       symbols.forEach((symbol: any, index: number) => {

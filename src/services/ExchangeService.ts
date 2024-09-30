@@ -47,10 +47,11 @@ export class ExchangeService {
       }
       const exchangeInfo = await this.getExchangeInfoApi();
       exchange.symbols = this.filterSymbols(exchangeInfo);
+      exchange.rateLimits = exchangeInfo.rateLimits;
       await this.update(exchange);
       await settingsService.updateField(settings, 'exchangeUpdateInterval', new Date().getTime());
     }
-    return exchange.symbols;
+    return exchange;
   }
 
   async getExchangeInfoApi() {

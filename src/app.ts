@@ -8,14 +8,15 @@ import mongoose from 'mongoose';
 import mountRoutes from './routes';
 
 const app = express();
+let exchangeInfo: { rateLimits: any; };
 
 // TODO removi outras funções e foquei somente na conexão com o MongoDB e criação dos dados da Exchange
 
 (async () => {
   serveStaticFiles();
-  await setInterceptors();
   await initDatabase();
-  initRobot();
+  await setInterceptors();
+  await initRobot();
 })()
 
 async function setInterceptors() {
@@ -24,7 +25,16 @@ async function setInterceptors() {
     return request;
   });
   axios.interceptors.response.use(response => {
-    logger.info(`# RESPONSE STATUS: ${response.status}`);
+    /**
+      interval = 'MINUTE'
+      intervalNum = 5
+      limit = 61000
+      rateLimitType = 'RAW_REQUESTS'
+     */
+    const rateLimits = response?.data?.rateLimits || exchangeInfo?.rateLimits;
+    const limit = rateLimits?.find((l: any) => l.rateLimitType === 'REQUEST_WEIGHT');
+    logger.info(`# RESPONSE STATUS: ${response.status}. ` + `Used weight: ${response.headers['x-mbx-used-weight']}/${limit.limit}`);
+    logger.debug(response?.data);
     return response;
   });
 }
@@ -32,6 +42,7 @@ async function setInterceptors() {
 async function initRobot() {
   const robotService = new RobotService()
   await robotService.init();
+  exchangeInfo = robotService.getExchangeInfo();
   // JobQueue.run();
 }
 
