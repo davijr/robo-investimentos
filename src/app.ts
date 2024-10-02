@@ -8,7 +8,8 @@ import mongoose from 'mongoose';
 import mountRoutes from './routes';
 
 const app = express();
-let exchangeInfo: { rateLimits: any; };
+
+const robotService = new RobotService();
 
 // TODO removi outras funções e foquei somente na conexão com o MongoDB e criação dos dados da Exchange
 
@@ -16,12 +17,13 @@ let exchangeInfo: { rateLimits: any; };
   serveStaticFiles();
   await initDatabase();
   await setInterceptors();
-  await initRobot();
+  await robotService.init();
 })()
 
 async function setInterceptors() {
-  axios.interceptors.request.use(request => {
-    logger.info(`# REQUEST: ${request.method?.toUpperCase()} ${request.url}`);
+  axios.interceptors.request.use((request: any) => {
+    const url = (request.url.length < 150) ? request.url : request.url?.substring(0, 150) + '...';
+    logger.info(`# REQUEST: ${request.method?.toUpperCase()} ${url}`);
     return request;
   });
   axios.interceptors.response.use(response => {
@@ -31,18 +33,15 @@ async function setInterceptors() {
       limit = 61000
       rateLimitType = 'RAW_REQUESTS'
      */
-    const rateLimits = response?.data?.rateLimits || exchangeInfo?.rateLimits;
+    const rateLimits = response?.data?.rateLimits || robotService.getExchangeInfo()?.rateLimits;
     const limit = rateLimits?.find((l: any) => l.rateLimitType === 'REQUEST_WEIGHT');
-    logger.info(`# RESPONSE STATUS: ${response.status}. ` + `Used weight: ${response.headers['x-mbx-used-weight']}/${limit.limit}`);
-    logger.debug(response?.data);
+    logger.info(`# RESPONSE STATUS: ${response.status}. ` + `Used weight: ${response.headers['x-mbx-used-weight']}/${limit?.limit}`);
     return response;
   });
 }
 
 async function initRobot() {
-  const robotService = new RobotService()
-  await robotService.init();
-  exchangeInfo = robotService.getExchangeInfo();
+  // await robotService.init();
   // JobQueue.run();
 }
 

@@ -129,6 +129,9 @@ export class AppUtils {
   }
 
   public static toFixed(x: any) {
+    if (!x) {
+      return;
+    }
     if (Math.abs(x) < 1.0) {
       var e = parseInt(x.toString().split("e-")[1]);
       if (e) {
