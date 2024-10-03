@@ -85,6 +85,7 @@ export class AppUtils {
   }
 
   public static extractErrorMessage(e: any): string {
+    if (typeof e === "string") return e;
     let message = e.response?.data?.msg;
     message = message || e.message;
     return message || AppUtils.stringify(e);
@@ -130,7 +131,7 @@ export class AppUtils {
 
   public static toFixed(x: any) {
     if (!x) {
-      return;
+      throw new Error('Invalid number. x=' + x);
     }
     if (Math.abs(x) < 1.0) {
       var e = parseInt(x.toString().split("e-")[1]);
