@@ -41,7 +41,7 @@ export class ExchangeService {
     let exchange: any = await Exchange.findOne();
     const diff = AppUtils.diffSec(exchange?.updatedAt) || 999;
     if (!exchange || diff > settings.exchangeUpdateInterval) {
-      logger.info('Atualizando informações da exchange (Binance).');
+      logger.info('# Atualizando informações da exchange (Binance).');
       if (!exchange) {
         exchange = new Exchange({});
       }
@@ -49,7 +49,7 @@ export class ExchangeService {
       exchange.symbols = this.filterSymbols(exchangeInfo);
       exchange.rateLimits = exchangeInfo.rateLimits;
       await this.update(exchange);
-      await settingsService.updateField(settings, 'exchangeUpdateInterval', new Date().getTime());
+      // await settingsService.updateField(settings, 'exchangeUpdateInterval', new Date().getTime());
     }
     return exchange;
   }

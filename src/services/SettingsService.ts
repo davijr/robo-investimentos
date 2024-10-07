@@ -15,6 +15,7 @@ export class SettingsService {
         myTradesUpdateInterval: AppConstants.MYTRADES_UPDATE_INTERVAL,
         accountUpdateInterval: AppConstants.ACCOUNT_UPDATE_INTERVAL,
         exchangeUpdateInterval: AppConstants.EXCHANGE_UPDATE_INTERVAL,
+        balancesUpdateInterval: AppConstants.BALANCES_UPDATE_INTERVAL,
         stopTimeAfterFinish: AppConstants.STOP_TIME_AFTER_FINISH,
         includeSymbols: AppConstants.INCLUDE_SYMBOLS,
         excludeSymbols: AppConstants.EXCLUDE_SYMBOLS,
