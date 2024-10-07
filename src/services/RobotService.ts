@@ -44,6 +44,8 @@ export class RobotService {
     await this.setRobotStatus(lastStatus);
     if ([RobotStatusEnum.ACTIVE, RobotStatusEnum.SEARCHING].includes(lastStatus)) {
       await this.run();
+    } else if ([RobotStatusEnum.TRADING].includes(lastStatus)) {
+      await this.verifyStatus();
     }
   }
 
@@ -59,6 +61,27 @@ export class RobotService {
           this.processBuySellSell();
         }
       });
+    }
+  }
+
+  private async verifyStatus() {
+    // get last order
+    const lastOportunity: any = await oportunityService.getLast();
+    const qtyOrdersFilled = lastOportunity?.ordersResponse?.filter((o: any) => o.status === OrderStatusEnum.FILLED).length;
+    if (qtyOrdersFilled === 3 && lastOportunity.status === OportunityStatusEnum.SUCCESS) {
+      this.run();
+    } else if (qtyOrdersFilled > 1) {
+      const lastOrderResponse = lastOportunity?.ordersResponse?.at(-1); // last element
+      const order: any = await orderService.getFinalStatus(lastOrderResponse);
+      if (order.status === OrderStatusEnum.FILLED) {
+        lastOportunity.ordersResponse.push(AppUtils.validateJson(order));
+        lastOportunity.status = OportunityStatusEnum.SUCCESS;
+        await oportunityService.update(lastOportunity);
+        this.run();
+      }
+    } else if (qtyOrdersFilled === 1) {
+      const lastOrderResponse = lastOportunity?.ordersResponse?.at(-1); // last element
+      await orderService.getFinalStatus(lastOrderResponse);
     }
   }
 
