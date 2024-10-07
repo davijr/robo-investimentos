@@ -12,6 +12,7 @@ export class AppConstants {
     static readonly ACCOUNT_UPDATE_INTERVAL = 60; // segundos
     static readonly EXCHANGE_UPDATE_INTERVAL = 60; // segundos
     static readonly STOP_TIME_AFTER_FINISH = 60; // segundos
+    static readonly BALANCES_UPDATE_INTERVAL = 60; // segundos
     static readonly QUOTE = 'USDT';
     static readonly MIN_DAILY_VOLUME = 1000000; // volume diário mínimo: 1 milhão
     static readonly PROFITABILITY = 1.001; // 1.00075 é a taxa Binance = 0,075% quando tem BNB. Ou 0,1% se não tiver BNB na conta

@@ -49,7 +49,7 @@ export class ExchangeService {
       exchange.symbols = this.filterSymbols(exchangeInfo);
       exchange.rateLimits = exchangeInfo.rateLimits;
       await this.update(exchange);
-      await settingsService.updateField(settings, 'exchangeUpdateInterval', new Date().getTime());
+      // await settingsService.updateField(settings, 'exchangeUpdateInterval', new Date().getTime());
     }
     return exchange;
   }
