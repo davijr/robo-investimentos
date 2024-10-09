@@ -258,7 +258,7 @@ export class RobotService {
               }
             ];
             if (![RobotStatusEnum.ERROR, RobotStatusEnum.TRADING].includes(settings.robotStatus)
-              && !this.hasInvalidParams(operations) && this.isFiltersValid('BBS', p1, q1, candidate.buy1.filters)) {
+              && !this.hasInvalidParams('BBS', crossRate, operations) && this.isFiltersValid('BBS', p1, q1, candidate.buy1.filters)) {
               await this.setRobotStatus(RobotStatusEnum.TRADING);
               NotificationService.playSound(NotificationSoundType.FOUND);
               const oportunidade = await oportunityService.create({ strategy: 'BBS', symbols: operations, profitability: crossRate, initialValue: settings.amount, ordersRequest: operations });
@@ -313,7 +313,7 @@ export class RobotService {
               }
             ];
             if (![RobotStatusEnum.ERROR, RobotStatusEnum.TRADING].includes(settings.robotStatus)
-              && !this.hasInvalidParams(operations) && this.isFiltersValid('BSS', p1, q1, candidate.buy.filters)) {
+              && !this.hasInvalidParams('BSS', crossRate, operations) && this.isFiltersValid('BSS', p1, q1, candidate.buy.filters)) {
               await this.setRobotStatus(RobotStatusEnum.TRADING);
               NotificationService.playSound(NotificationSoundType.FOUND);
               const oportunidade = await oportunityService.create({ strategy: 'BSS', profitability: crossRate, initialValue: settings.amount, ordersRequest: operations });
@@ -362,16 +362,18 @@ export class RobotService {
   // }
 
 
-  private hasInvalidParams(symbols: any[]) {
+  private hasInvalidParams(strategy: 'BBS' | 'BSS', crossRate: number, symbols: any[]) {
     if (symbols.some(i => !i.symbol || !i.price)) {
-      logger.warn('Encontrada uma oportunidade, porém, a triangulação possui parâmetros inválidos.');
+      const msg = `strategy: ${strategy} - crossRate: ${crossRate} = ${symbols.map(i => i.symbol + ' (' + i.price + ')').join(' > ')}`;
+      logger.warn('Encontrada uma oportunidade, porém, a triangulação possui parâmetros inválidos. ' + msg);
       return true;
     }
     const qty3 = symbols[2].quantity * symbols[2].price;
     const profitability = (qty3 - settings.amount) / settings.amount;
     const hasProfit = profitability > 0;
     if (!hasProfit) {
-      logger.warn('Encontrada uma oportunidade, porém, o resultado proposto não parece ser lucrativo.');
+      const msg = `strategy: ${strategy} - crossRate: ${crossRate} = ${symbols.map(i => i.symbol + ' (' + i.price + ')').join(' > ')}, profitability: ${profitability}`;
+      logger.warn('Encontrada uma oportunidade, porém, o resultado proposto não parece ser lucrativo. ' + msg);
       return true;
     }
     return false;
