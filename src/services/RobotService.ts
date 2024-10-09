@@ -371,8 +371,10 @@ export class RobotService {
     const qty3 = symbols[2].quantity * symbols[2].price;
     const profitability = (qty3 - settings.amount) / settings.amount;
     const hasProfit = profitability > 0;
+    const valorInicial = `valorInicial: ${settings.amount} ${settings.quote}`;
+    const valorFinal = `valorFinal: ${qty3} ${settings.quote}`;
     if (!hasProfit) {
-      const msg = `strategy: ${strategy} - crossRate: ${crossRate} = ${symbols.map(i => i.symbol + ' (' + i.price + ')').join(' > ')}, profitability: ${profitability}`;
+      const msg = `strategy: ${strategy} - crossRate: ${crossRate} = ${symbols.map(i => i.symbol + ' (' + i.price + ')').join(' > ')}, ${valorInicial}, ${valorFinal}`;
       logger.warn('Encontrada uma oportunidade, porém, o resultado proposto não parece ser lucrativo. ' + msg);
       return true;
     }
