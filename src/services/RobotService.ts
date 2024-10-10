@@ -374,7 +374,7 @@ export class RobotService {
     const valorInicial = `valorInicial: ${settings.amount} ${settings.quote}`;
     const valorFinal = `valorFinal: ${qty3} ${settings.quote}`;
     if (!hasProfit) {
-      const msg = `strategy: ${strategy} - crossRate: ${crossRate} = ${symbols.map(i => i.symbol + ' (' + i.price + ')').join(' > ')}, ${valorInicial}, ${valorFinal}`;
+      const msg = `strategy: ${strategy} - crossRate: ${crossRate} = ${symbols.map(i => i.symbol + ' (' + i.quantity + '/' + i.price + ')').join(' > ')}, ${valorInicial}, ${valorFinal}`;
       logger.warn('Encontrada uma oportunidade, porém, o resultado proposto não parece ser lucrativo. ' + msg);
       return true;
     }
@@ -621,6 +621,8 @@ export class RobotService {
         }
       } else {
         logger.info('##################### FIM DA OPERAÇÃO #####################');
+        logger.warn(`################### ESPERAR ${settings.stopTimeAfterFinish} SEGUNDOS #####################`);
+        await AppUtils.sleep(settings.stopTimeAfterFinish);
         await this.setRobotStatus(RobotStatusEnum.SEARCHING);
       }
     } catch (e: any) {
