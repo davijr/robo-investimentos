@@ -110,3 +110,4 @@ dist
 # TODO remove this
 postgres/data
 *.zip
+.vercel
