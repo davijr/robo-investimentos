@@ -50,4 +50,8 @@ export class OportunityService {
     // TODO ao criar a tabela Oportunity, criar um index pra a busca ficar mais rápida
   }
 
+  public async getLast() {
+    return await Oportunity.findOne().sort({updatedAt: -1});
+  }
+
 }

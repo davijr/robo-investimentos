@@ -13,6 +13,8 @@ const schema = new mongoose.Schema({
     timeFirstOffer: Number,
     duration: Number, // seconds
     profitability: Number,
+    profit: Number,
+    tax: Number,
     initialValue: Number,
     finalValue: Number,
     ordersRequest: [mongoose.Schema.Types.Mixed],

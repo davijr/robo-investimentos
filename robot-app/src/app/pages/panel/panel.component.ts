@@ -30,6 +30,7 @@ export class PanelComponent implements OnInit {
   onRefreshBalances () {
     this.accountInfo$ = this.walletService.getAccountInfo().pipe(
       tap(accountInfo => {
+        accountInfo.balances = accountInfo.balances.filter((balance: any) => Number(balance.free) > 0 || Number(balance.locked) > 0);
         // const assets = this.accountInfo?.balances?.map((balance: any) => {
         //   return balance.asset
         // })

@@ -9,29 +9,39 @@ import mountRoutes from './routes';
 
 const app = express();
 
+const robotService = new RobotService();
+
 // TODO removi outras funções e foquei somente na conexão com o MongoDB e criação dos dados da Exchange
 
 (async () => {
   serveStaticFiles();
-  await setInterceptors();
   await initDatabase();
-  initRobot();
+  await setInterceptors();
+  await robotService.init();
 })()
 
 async function setInterceptors() {
-  axios.interceptors.request.use(request => {
-    logger.info(`# REQUEST: ${request.method?.toUpperCase()} ${request.url}`);
+  axios.interceptors.request.use((request: any) => {
+    const url = (request.url.length < 150) ? request.url : request.url?.substring(0, 150) + '...';
+    logger.info(`# REQUEST: ${request.method?.toUpperCase()} ${url}`);
     return request;
   });
   axios.interceptors.response.use(response => {
-    logger.info(`# RESPONSE STATUS: ${response.status}`);
+    /**
+      interval = 'MINUTE'
+      intervalNum = 5
+      limit = 61000
+      rateLimitType = 'RAW_REQUESTS'
+     */
+    const rateLimits = response?.data?.rateLimits || robotService.getExchangeInfo()?.rateLimits;
+    const limit = rateLimits?.find((l: any) => l.rateLimitType === 'REQUEST_WEIGHT');
+    logger.info(`# RESPONSE STATUS: ${response.status}. ` + `Used weight: ${response.headers['x-mbx-used-weight']}/${limit?.limit}`);
     return response;
   });
 }
 
 async function initRobot() {
-  const robotService = new RobotService()
-  await robotService.init();
+  // await robotService.init();
   // JobQueue.run();
 }
 
