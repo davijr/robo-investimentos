@@ -1,6 +1,7 @@
 
 export class AppConstants {
   static readonly API_URL = process.env.API_URL;
+  static readonly API_URL_EXECUTION = process.env.API_URL_EXECUTION;
   static readonly API_URL_STREAM = process.env.API_URL_STREAM;
   static readonly API_KEY = process.env.API_KEY;
   static readonly API_SECRET = process.env.API_SECRET;
