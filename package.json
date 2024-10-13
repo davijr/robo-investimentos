@@ -14,7 +14,7 @@
     "start:windows": "SET NODE_ENV=dev && node dist/server.js",
     "start:prod": "SET NODE_ENV=prod && node dist/server.js",
     "test": "jest --watch",
-    "build": "babel src --extensions \".js,.ts\" --out-dir dist --copy-files --no-copy-ignored",
+    "build": "echo cd robot-app && cd robot-app && echo npm install && npm install && echo npm run build && npm run build && echo cd .. && cd .. && echo babel src --extensions \".js,.ts\" --out-dir dist --copy-files --no-copy-ignored && babel src --extensions \".js,.ts\" --out-dir dist --copy-files --no-copy-ignored",
     "vercel-build": "echo cd robot-app && cd robot-app && echo npm install && npm install && echo npm run build && npm run build && echo cd .. && cd .. && echo babel src --extensions \".js,.ts\" --out-dir dist --copy-files --no-copy-ignored && babel src --extensions \".js,.ts\" --out-dir dist --copy-files --no-copy-ignored",
     "build:prod": "export NODE_ENV=prod && babel src --extensions \".js,.ts\" --out-dir dist --copy-files --no-copy-ignored",
     "build:prod:windows": "SET NODE_ENV=prod && babel src --extensions \".js,.ts\" --out-dir dist --copy-files --no-copy-ignored",
