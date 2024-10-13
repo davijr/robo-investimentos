@@ -4,7 +4,7 @@
 
 export const environment = {
   production: true,
-  API_URL: 'http://localhost:8000/api/',
+  API_URL: 'https://jellyfish-app-igaoz.ondigitalocean.app/api/',
   debugForms: false
 }
 
