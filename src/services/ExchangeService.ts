@@ -55,7 +55,9 @@ export class ExchangeService {
   }
 
   async getExchangeInfoApi() {
-    const response = await axios.get(`${this.API_URL}${AppConstants.URL_EXCHANGE_INFO}`);
+    const url = `${this.API_URL}${AppConstants.URL_EXCHANGE_INFO}`;
+    logger.info(`# Buscando informações da exchange (Binance) na API: ${url}`);
+    const response = await axios.get(url);
     return response.data;
   }
 

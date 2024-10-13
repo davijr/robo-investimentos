@@ -191,6 +191,7 @@ export class RobotService {
       logger.info(`# Foram encontrados ${pairs.size} pares disponíveis para triangulação.`);
     } catch (e: any) {
       await this.setRobotStatus(RobotStatusEnum.ERROR);
+      console.log(e);
       logger.error('(!) Ocorreu um erro ao obter pares de símbolos.', AppUtils.extractErrorMessage(e));
     }
   }
