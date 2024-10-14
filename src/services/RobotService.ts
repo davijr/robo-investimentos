@@ -394,7 +394,7 @@ export class RobotService {
    * Link: https://developers.binance.com/docs/binance-spot-api-docs/filters
    * Retorno: possibleQuantity.
    */
-  private isFiltersValid(strategy: string, price: number, quantity: number, filters: any[]): boolean {
+  private isFiltersValid(strategy: string, price: number, quantity: number, filters: any): boolean {
     try {
       for (const filteName of Object.keys(filters)) {
         const filter = filters[filteName];

@@ -66,7 +66,7 @@ export class ExchangeService {
       .map((symbol: any) => {
         const filters: any = {};
         symbol.filters.forEach((filter: any) => {
-          filters[filter.name] = filter;
+          filters[filter.filterType] = filter;
         });
         return {
           symbol: symbol.symbol,
