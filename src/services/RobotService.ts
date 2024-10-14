@@ -392,7 +392,9 @@ export class RobotService {
    */
   private isFiltersValid(strategy: string, price: number, quantity: number, filters: any[]): boolean {
     try {
-      for (const filter of filters) {
+      for (const filteName of Object.keys(filters)) {
+        const filter = filters[filteName];
+        if (!filter) continue;
         switch (filter.filterType) {
           case "PRICE_FILTER":
             if (price < AppUtils.toFixed(filter.minPrice)) {
