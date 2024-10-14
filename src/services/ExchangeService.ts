@@ -64,11 +64,15 @@ export class ExchangeService {
   filterSymbols(exchange: any) {
     return exchange.symbols?.filter((symbol: any) => symbol.status === 'TRADING')
       .map((symbol: any) => {
+        const filters: any = {};
+        symbol.filters.forEach((filter: any) => {
+          filters[filter.name] = filter;
+        });
         return {
           symbol: symbol.symbol,
           base: symbol.baseAsset,
           quote: symbol.quoteAsset,
-          filters: symbol.filters
+          filters
         }
       });
   }

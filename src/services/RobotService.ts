@@ -265,7 +265,8 @@ export class RobotService {
               const oportunidade = await oportunityService.create({ strategy: 'BBS', symbols: operations, profitability: crossRate, initialValue: settings.amount, ordersRequest: operations });
               logger.info(`# BBS: BUY qty1 = ${q1} ${candidate.buy1.symbol}(${p1}), BUY qty2 = ${q2} ${candidate.buy2.symbol}(${p2}), SELL qty3 = ${q3} ${candidate.sell.symbol}(${p3})`);
               logger.info(`# Previsão de retorno de aproximadamente: ${finalAmount} ${settings.quote}`);
-              await this.executeStrategy(oportunidade);
+              // await this.executeStrategy(oportunidade);
+              await this.execution(oportunidade);
             }
           } else if (crossRate > 1.00075) {
             logger.warn(`BBS - crossRate: ${crossRate} = ${candidate.buy1.symbol} (${p1}) > ${candidate.buy2.symbol} (${p2}) > ${candidate.sell.symbol} (${p3})`);
@@ -293,7 +294,7 @@ export class RobotService {
             const q1 = this.applyValidations(settings.amount / p1, candidate.buy.filters, 'LOT_SIZE');
             const q2 = this.applyValidations(q1, candidate.sell1.filters, 'LOT_SIZE');
             const q3 = this.applyValidations(q2 * p2, candidate.sell2.filters, 'LOT_SIZE');
-            const finalAmount = (q3 * p3) - settings.amount;
+            // const finalAmount = (q3 * p3) - settings.amount;
             // logger.info(`# Investindo ${settings.quote} ${settings.amount}, retorna ${settings.quote} ${((settings.amount / priceBuy) / priceSell1) * priceSell2}`);
             const operations = [
               {
@@ -316,11 +317,12 @@ export class RobotService {
             if (![RobotStatusEnum.ERROR, RobotStatusEnum.TRADING].includes(settings.robotStatus)
               && !this.hasInvalidParams('BSS', crossRate, operations) && this.isFiltersValid('BSS', p1, q1, candidate.buy.filters)) {
               await this.setRobotStatus(RobotStatusEnum.TRADING);
-              NotificationService.playSound(NotificationSoundType.FOUND);
-              const oportunidade = await oportunityService.create({ strategy: 'BSS', profitability: crossRate, initialValue: settings.amount, ordersRequest: operations });
+              // NotificationService.playSound(NotificationSoundType.FOUND);
+              const oportunidade = oportunityService.create({ strategy: 'BSS', profitability: crossRate, initialValue: settings.amount, ordersRequest: operations });
               logger.info(`# BSS: BUY qty1 = ${q1} ${candidate.buy.symbol}(${p1}), SELL qty2 = ${q2} ${candidate.buy.symbol}(${p2}), SELL qty3 = ${q3} ${candidate.sell1.symbol}(${p3})`);
-              logger.info(`# Previsão de retorno de aproximadamente: ${finalAmount} ${settings.quote}`);
-              await this.executeStrategy(oportunidade);
+              // logger.info(`# Previsão de retorno de aproximadamente: ${finalAmount} ${settings.quote}`);
+              // await this.executeStrategy(oportunidade);
+              await this.execution(oportunidade);
             }
           } else if (crossRate > 1.00075) {
             logger.warn(`BSS - crossRate: ${crossRate} = ${candidate.buy.symbol} (${p1}) > ${candidate.sell1.symbol} (${p2}) > ${candidate.sell2.symbol} (${p3})`);
@@ -333,11 +335,11 @@ export class RobotService {
     }
   }
 
-  private applyValidations(valueParam: number, filters: any[], filterName: 'PRICE_FILTER' | 'LOT_SIZE') {
+  private applyValidations(valueParam: number, filters: any, filterName: 'PRICE_FILTER' | 'LOT_SIZE') {
     try {
       // console.log(`applyValidations() valueParam: ${valueParam}, filters: ${filters.toString()}, filterName: ${filterName}`);
       // const newValue = AppUtils.toFixed(valueParam);
-      const filter = filters.find((f: any) => f.filterType === filterName);
+      const filter = filters[filterName];
       // console.log(`>>>>>>>>>>>>>>>>>>> valueParam: ${valueParam}, filter: ${JSON.stringify(filter)}`);
       const final = this.handleTickSize(valueParam, AppUtils.toFixed(filter.tickSize || filter.stepSize));
       // console.log(`>>>>>>>>>>>>>>>>>>> final(handleTickSize): ${final}`);
@@ -505,6 +507,94 @@ export class RobotService {
     const newNumber = AppUtils.toFixed(`${beforeDot}.${afterDot.substring(0, qtyPositions).padEnd(qtyPositions, '0')}`);
     // logger.debug(`# handleTickSize(quantity: ${quantity}, tickSize: ${tickSize}) -> result: ${newNumber}`);
     return newNumber;
+  }
+
+  async execution(oportunity: any) {
+    try {
+      const operations = oportunity.ordersRequest;
+      oportunity.ordersResponse = [];
+      if (process.env.NODE_ENV?.includes('dev')) {
+        logger.info('##################### FIM DA OPERAÇÃO #####################');
+        logger.warn(`################### ESPERAR ${settings.stopTimeAfterFinish} SEGUNDOS #####################`);
+        await AppUtils.sleep(settings.stopTimeAfterFinish);
+        await this.setRobotStatus(RobotStatusEnum.SEARCHING);
+      } else {
+        const newOrder1 = {
+          type: OrderTypeEnum.LIMIT,
+          price: operations[0].price,
+          symbol: operations[0].symbol,
+          quantity: operations[0].quantity,
+          side: OrderSideEnum.BUY
+        };
+        // ==================== EXECUTAR ORDEM 1 ====================
+        let order1: any = await orderService.newOrder(newOrder1);
+        if (!order1) throw new Error('Ordem 1 não foi executada.');
+        if ([OrderStatusEnum.NEW, OrderStatusEnum.PARTIALLY_FILLED].includes(order1.status)) {
+          oportunity.ordersResponse.push(AppUtils.validateJson(order1));
+          order1 = await orderService.getFinalStatus(order1);
+        }
+        if (order1.status === OrderStatusEnum.FILLED) {
+          oportunity.ordersResponse.push(AppUtils.validateJson(order1));
+          oportunity.initialValue = order1.cummulativeQuoteQty;
+          // async oportunity updating
+          oportunity.status = OportunityStatusEnum.ORDER_FILLED1;
+          oportunityService.update(oportunity);
+          const secondTransactionType = (oportunity.strategy === 'BBS') ? OrderSideEnum.BUY : OrderSideEnum.SELL
+          const newOrder2 = {
+            type: OrderTypeEnum.LIMIT,
+            price: operations[1].price,
+            symbol: operations[1].symbol,
+            quantity: operations[1].quantity,
+            side: secondTransactionType
+          }
+          // ==================== EXECUTAR ORDEM 2 ====================
+          let order2: any = await orderService.newOrder(newOrder2);
+          if (!order2) throw new Error('Ordem 2 não foi executada.');
+          if ([OrderStatusEnum.NEW, OrderStatusEnum.PARTIALLY_FILLED].includes(order2.status)) {
+            oportunity.ordersResponse.push(AppUtils.validateJson(order2));
+            order2 = await orderService.getFinalStatus(order2);
+          }
+          if (order2.status === OrderStatusEnum.FILLED) {
+            oportunity.ordersResponse.push(AppUtils.validateJson(order2));
+            // async oportunity updating
+            oportunity.status = OportunityStatusEnum.ORDER_FILLED2;
+            oportunityService.update(oportunity);
+            const newOrder3 = {
+              type: OrderTypeEnum.LIMIT,
+              price: operations[2].price,
+              symbol: operations[2].symbol,
+              quantity: operations[2].quantity,
+              side: OrderSideEnum.SELL
+            };
+            // ==================== EXECUTAR ORDEM 3 ====================
+            let order3: any = await orderService.newOrder(newOrder3);
+            if (!order3) throw new Error('Ordem 3 não foi executada.');
+            if ([OrderStatusEnum.NEW, OrderStatusEnum.PARTIALLY_FILLED].includes(order3.status)) {
+              oportunity.ordersResponse.push(AppUtils.validateJson(order3));
+              order3 = await orderService.getFinalStatus(order3);
+            }
+            if (order3.status === OrderStatusEnum.FILLED) {
+              oportunity.ordersResponse.push(AppUtils.validateJson(order3));
+              oportunity.status = OportunityStatusEnum.SUCCESS;
+              let finalValue = 0;
+              try {
+                finalValue = AppUtils.toFixed(order3.cummulativeQuoteQty);
+              } catch (e) {
+                finalValue = newOrder3.price * newOrder3.quantity;
+              }
+              oportunity.finalValue = finalValue;
+              await oportunityService.update(oportunity);
+              logger.info('################### OPERAÇÃO COMPLETADA ####################');
+              logger.warn(`################### ESPERAR ${settings.stopTimeAfterFinish} SEGUNDOS #####################`);
+              await AppUtils.sleep(settings.stopTimeAfterFinish);
+              await this.setRobotStatus(RobotStatusEnum.SEARCHING);
+            }
+          }
+        }
+      }
+    } catch (e: any) {
+      await this.runError(OportunityStatusEnum.ERROR_OTHER, e, oportunity);
+    }
   }
 
   /**
