@@ -267,6 +267,7 @@ export class RobotService {
               logger.info(`# Previsão de retorno de aproximadamente: ${finalAmount} ${settings.quote}`);
               // await this.executeStrategy(oportunidade);
               await this.execution(oportunidade);
+              break;
             }
           } else if (crossRate > 1.00075) {
             logger.warn(`BBS - crossRate: ${crossRate} = ${candidate.buy1.symbol} (${p1}) > ${candidate.buy2.symbol} (${p2}) > ${candidate.sell.symbol} (${p3})`);
@@ -275,6 +276,7 @@ export class RobotService {
       } catch (e: any) {
         await this.setRobotStatus(RobotStatusEnum.ERROR);
         logger.error(`Ocorreu algum erro ao avaliar a oportunidade. Erro: ${AppUtils.extractErrorMessage(e)}`);
+        break;
       }
     }
   }
@@ -323,6 +325,7 @@ export class RobotService {
               // logger.info(`# Previsão de retorno de aproximadamente: ${finalAmount} ${settings.quote}`);
               // await this.executeStrategy(oportunidade);
               await this.execution(oportunidade);
+              break;
             }
           } else if (crossRate > 1.00075) {
             logger.warn(`BSS - crossRate: ${crossRate} = ${candidate.buy.symbol} (${p1}) > ${candidate.sell1.symbol} (${p2}) > ${candidate.sell2.symbol} (${p3})`);
@@ -331,6 +334,7 @@ export class RobotService {
       } catch (e: any) {
         await this.setRobotStatus(RobotStatusEnum.ERROR);
         logger.error(`Ocorreu algum erro ao avaliar a oportunidade. Erro: ${AppUtils.extractErrorMessage(e)}`);
+        break;
       }
     }
   }

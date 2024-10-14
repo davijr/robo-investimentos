@@ -1,10 +1,10 @@
 // This file can be replaced during build by using the `fileReplacements` array.
-// `ng build` replaces `environment.ts` with `environment.prod.ts`.
+// `ng build` replaces `environment.ts` with `environment.production.ts`.
 // The list of file replacements can be found in `angular.json`.
 
 export const environment = {
   production: true,
-  API_URL: 'https://jellyfish-app-igaoz.ondigitalocean.app/api/',
+  API_URL: 'https://seal-app-yb7or.ondigitalocean.app/api/',
   debugForms: false
 }
 
