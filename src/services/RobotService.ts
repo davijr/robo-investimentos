@@ -86,7 +86,7 @@ export class RobotService {
   }
 
   private async populateOrderBook() {
-    const symbols = allSymbols.map((s: any) => s.symbol);
+    const symbols = allSymbols?.map((s: any) => s.symbol);
     const result: any = await tickerService.getAll(symbols);
     result?.forEach((element: any) => {
       book[element.symbol] = {
@@ -371,7 +371,7 @@ export class RobotService {
 
   private hasInvalidParams(strategy: 'BBS' | 'BSS', crossRate: number, symbols: any[]) {
     if (symbols.some(i => !i.symbol || !i.price)) {
-      const msg = `strategy: ${strategy} - crossRate: ${crossRate} = ${symbols.map(i => i.symbol + ' (' + i.price + ')').join(' > ')}`;
+      const msg = `strategy: ${strategy} - crossRate: ${crossRate} = ${symbols?.map(i => i.symbol + ' (' + i.price + ')').join(' > ')}`;
       logger.warn('Encontrada uma oportunidade, porém, a triangulação possui parâmetros inválidos. ' + msg);
       return true;
     }
@@ -381,7 +381,7 @@ export class RobotService {
     const valorInicial = `valorInicial: ${settings.amount} ${settings.quote}`;
     const valorFinal = `valorFinal: ${qty3} ${settings.quote}`;
     if (!hasProfit) {
-      const msg = `strategy: ${strategy} - crossRate: ${crossRate} = ${symbols.map(i => i.symbol + ' (' + i.quantity + '/' + i.price + ')').join(' > ')}, ${valorInicial}, ${valorFinal}`;
+      const msg = `strategy: ${strategy} - crossRate: ${crossRate} = ${symbols?.map(i => i.symbol + ' (' + i.quantity + '/' + i.price + ')').join(' > ')}, ${valorInicial}, ${valorFinal}`;
       logger.warn('Encontrada uma oportunidade, porém, o resultado proposto não parece ser lucrativo. ' + msg);
       return true;
     }

@@ -13,7 +13,7 @@ export class OportunityService {
   }
 
   async create (oportunity: any) {
-    oportunity.key = oportunity.key || `${oportunity.strategy}_${oportunity.ordersRequest.map((i: any) => i.symbol).join('_')}_${oportunity.profitability}`;
+    oportunity.key = oportunity.key || `${oportunity.strategy}_${oportunity.ordersRequest?.map((i: any) => i.symbol).join('_')}_${oportunity.profitability}`;
     const newOportunity = new Oportunity(oportunity);
     await newOportunity.save();
     return newOportunity;
@@ -28,7 +28,7 @@ export class OportunityService {
 
   public async saveUpdate(oportunity: any) {
     const { strategy, symbols, crossRate } = oportunity;
-    const createOportunityKey = `${strategy}_${symbols.map((i: any) => i.symbol).join('_')}_${crossRate}`;
+    const createOportunityKey = `${strategy}_${symbols?.map((i: any) => i.symbol).join('_')}_${crossRate}`;
     const findOportunity = await Oportunity.findOne({id: oportunity._id});
     if (findOportunity) {
       const duration = AppUtils.diffSec(findOportunity?.timeFirstOffer);

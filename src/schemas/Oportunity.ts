@@ -23,6 +23,8 @@ const schema = new mongoose.Schema({
         type: String,
         enum: [
             'SUCCESS',
+            'ORDER_FILLED1',
+            'ORDER_FILLED2',
             'ERROR_ORDER1',
             'ERROR_ORDER2',
             'ERROR_ORDER3',

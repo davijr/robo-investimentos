@@ -22,7 +22,7 @@ export class OrderService {
       order.timeInForce = 'GTC'; // TODO comentei pra testar o recWindows
     }
     try {
-      return await binance.post(this.orderUrl, order, true);
+      return await binance.post(this.orderUrl, order);
     } catch (e: any) {
       const msg = `Erro ao efetuar chamada à API Binance. ${AppUtils.extractErrorMessage(e)}`;
       logger.error(msg);
