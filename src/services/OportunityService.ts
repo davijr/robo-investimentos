@@ -16,6 +16,7 @@ export class OportunityService {
     oportunity.key = oportunity.key || `${oportunity.strategy}_${oportunity.ordersRequest?.map((i: any) => i.symbol).join('_')}_${oportunity.profitability}`;
     const newOportunity = new Oportunity(oportunity);
     await newOportunity.save();
+    oportunity._id = newOportunity._id;
     return newOportunity;
   }
 
@@ -23,7 +24,8 @@ export class OportunityService {
     if (!oportunity?._id) {
       return await this.create(oportunity);
     }
-    return await oportunity.save();
+    return await this.saveUpdate(oportunity);
+    // return await oportunity.save();
   }
 
   public async saveUpdate(oportunity: any) {

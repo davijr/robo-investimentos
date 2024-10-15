@@ -240,7 +240,7 @@ export class RobotService {
             const q2 = this.applyValidations(q1 / p2, candidate.buy2.filters, 'LOT_SIZE');
             const q3 = this.applyValidations(q2, candidate.sell.filters, 'LOT_SIZE');
             const finalAmount = (q3 * p3) - settings.amount;
-            const operations = [
+            const ordersRequest = [
               {
                 symbol: candidate.buy1.symbol,
                 price: p1,
@@ -259,14 +259,20 @@ export class RobotService {
               }
             ];
             if (![RobotStatusEnum.ERROR, RobotStatusEnum.TRADING].includes(settings.robotStatus)
-              && !this.hasInvalidParams('BBS', crossRate, operations) && this.isFiltersValid('BBS', p1, q1, candidate.buy1.filters)) {
-              await this.setRobotStatus(RobotStatusEnum.TRADING);
-              NotificationService.playSound(NotificationSoundType.FOUND);
-              const oportunidade = await oportunityService.create({ strategy: 'BBS', symbols: operations, profitability: crossRate, initialValue: settings.amount, ordersRequest: operations });
+              && !this.hasInvalidParams('BBS', crossRate, ordersRequest) && this.isFiltersValid('BBS', p1, q1, candidate.buy1.filters)) {
+              this.setRobotStatus(RobotStatusEnum.TRADING);
+              // NotificationService.playSound(NotificationSoundType.FOUND);
+              const oportunity: any = {
+                strategy: 'BBS',
+                profitability: crossRate,
+                initialValue: settings.amount,
+                ordersRequest
+              };
+              oportunityService.create(oportunity);
               logger.info(`# BBS: BUY qty1 = ${q1} ${candidate.buy1.symbol}(${p1}), BUY qty2 = ${q2} ${candidate.buy2.symbol}(${p2}), SELL qty3 = ${q3} ${candidate.sell.symbol}(${p3})`);
               logger.info(`# Previsão de retorno de aproximadamente: ${finalAmount} ${settings.quote}`);
               // await this.executeStrategy(oportunidade);
-              await this.execution(oportunidade);
+              await this.execution(oportunity);
               break;
             }
           } else if (crossRate > 1.00075) {
@@ -298,7 +304,7 @@ export class RobotService {
             const q3 = this.applyValidations(q2 * p2, candidate.sell2.filters, 'LOT_SIZE');
             // const finalAmount = (q3 * p3) - settings.amount;
             // logger.info(`# Investindo ${settings.quote} ${settings.amount}, retorna ${settings.quote} ${((settings.amount / priceBuy) / priceSell1) * priceSell2}`);
-            const operations = [
+            const ordersRequest = [
               {
                 symbol: candidate.buy.symbol,
                 price: p1,
@@ -317,14 +323,20 @@ export class RobotService {
               }
             ];
             if (![RobotStatusEnum.ERROR, RobotStatusEnum.TRADING].includes(settings.robotStatus)
-              && !this.hasInvalidParams('BSS', crossRate, operations) && this.isFiltersValid('BSS', p1, q1, candidate.buy.filters)) {
-              await this.setRobotStatus(RobotStatusEnum.TRADING);
+              && !this.hasInvalidParams('BSS', crossRate, ordersRequest) && this.isFiltersValid('BSS', p1, q1, candidate.buy.filters)) {
+              this.setRobotStatus(RobotStatusEnum.TRADING);
               // NotificationService.playSound(NotificationSoundType.FOUND);
-              const oportunidade = oportunityService.create({ strategy: 'BSS', profitability: crossRate, initialValue: settings.amount, ordersRequest: operations });
+              const oportunity: any = {
+                strategy: 'BSS',
+                profitability: crossRate,
+                initialValue: settings.amount,
+                ordersRequest
+              };
+              oportunityService.create(oportunity);
               logger.info(`# BSS: BUY qty1 = ${q1} ${candidate.buy.symbol}(${p1}), SELL qty2 = ${q2} ${candidate.buy.symbol}(${p2}), SELL qty3 = ${q3} ${candidate.sell1.symbol}(${p3})`);
               // logger.info(`# Previsão de retorno de aproximadamente: ${finalAmount} ${settings.quote}`);
               // await this.executeStrategy(oportunidade);
-              await this.execution(oportunidade);
+              await this.execution(oportunity);
               break;
             }
           } else if (crossRate > 1.00075) {
@@ -510,14 +522,14 @@ export class RobotService {
     const afterDot = new String(quantity).split(".")[1];
     const qtyPositions = new String(AppUtils.toFixed(tickSize)).split(".")[1]?.length || 0;
     if (!afterDot) return quantity;
-    const newNumber = AppUtils.toFixed(`${beforeDot}.${afterDot.substring(0, qtyPositions).padEnd(qtyPositions, '0')}`);
+    const newNumber = AppUtils.toFixed(`${beforeDot}.${afterDot.substring(0, qtyPositions)}`);
     // logger.debug(`# handleTickSize(quantity: ${quantity}, tickSize: ${tickSize}) -> result: ${newNumber}`);
     return newNumber;
   }
 
   async execution(oportunity: any) {
     try {
-      const operations = oportunity.ordersRequest;
+      const { strategy, ordersRequest } = oportunity;
       oportunity.ordersResponse = [];
       if (process.env.NODE_ENV?.includes('dev')) {
         logger.info('##################### FIM DA OPERAÇÃO #####################');
@@ -527,12 +539,12 @@ export class RobotService {
       } else {
         const newOrder1 = {
           type: OrderTypeEnum.LIMIT,
-          price: operations[0].price,
-          symbol: operations[0].symbol,
-          quantity: operations[0].quantity,
+          price: ordersRequest[0].price,
+          symbol: ordersRequest[0].symbol,
+          quantity: ordersRequest[0].quantity,
           side: OrderSideEnum.BUY
         };
-        // ==================== EXECUTAR ORDEM 1 ====================
+        logger.info('==================== EXECUTAR ORDEM 1 ====================');
         let order1: any = await orderService.newOrder(newOrder1);
         if (!order1) throw new Error('Ordem 1 não foi executada.');
         if ([OrderStatusEnum.NEW, OrderStatusEnum.PARTIALLY_FILLED].includes(order1.status)) {
@@ -545,15 +557,15 @@ export class RobotService {
           // async oportunity updating
           oportunity.status = OportunityStatusEnum.ORDER_FILLED1;
           oportunityService.update(oportunity);
-          const secondTransactionType = (oportunity.strategy === 'BBS') ? OrderSideEnum.BUY : OrderSideEnum.SELL
+          const secondTransactionType = (strategy === 'BBS') ? OrderSideEnum.BUY : OrderSideEnum.SELL
           const newOrder2 = {
             type: OrderTypeEnum.LIMIT,
-            price: operations[1].price,
-            symbol: operations[1].symbol,
-            quantity: operations[1].quantity,
+            price: ordersRequest[1].price,
+            symbol: ordersRequest[1].symbol,
+            quantity: ordersRequest[1].quantity,
             side: secondTransactionType
           }
-          // ==================== EXECUTAR ORDEM 2 ====================
+          logger.info('==================== EXECUTAR ORDEM 2 ====================');
           let order2: any = await orderService.newOrder(newOrder2);
           if (!order2) throw new Error('Ordem 2 não foi executada.');
           if ([OrderStatusEnum.NEW, OrderStatusEnum.PARTIALLY_FILLED].includes(order2.status)) {
@@ -567,12 +579,12 @@ export class RobotService {
             oportunityService.update(oportunity);
             const newOrder3 = {
               type: OrderTypeEnum.LIMIT,
-              price: operations[2].price,
-              symbol: operations[2].symbol,
-              quantity: operations[2].quantity,
+              price: ordersRequest[2].price,
+              symbol: ordersRequest[2].symbol,
+              quantity: ordersRequest[2].quantity,
               side: OrderSideEnum.SELL
             };
-            // ==================== EXECUTAR ORDEM 3 ====================
+            logger.info('==================== EXECUTAR ORDEM 3 ====================');
             let order3: any = await orderService.newOrder(newOrder3);
             if (!order3) throw new Error('Ordem 3 não foi executada.');
             if ([OrderStatusEnum.NEW, OrderStatusEnum.PARTIALLY_FILLED].includes(order3.status)) {
@@ -733,7 +745,7 @@ export class RobotService {
     oportunity.error = msg;
     await oportunityService.update(oportunity);
     await this.setRobotStatus(RobotStatusEnum.ERROR);
-    NotificationService.playSound(NotificationSoundType.ERROR);
+    // NotificationService.playSound(NotificationSoundType.ERROR);
     logger.error(msg);
     logger.error('##################### PARAR ROBÔ #####################');
     AppUtils.sleep(settings.stopTimeAfterFinish);
