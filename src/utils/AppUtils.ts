@@ -136,6 +136,10 @@ export class AppUtils {
     if (typeof x === 'string') {
       x = parseFloat(x);
     }
+    if (x.toString().includes('e')) {
+      // const newX = (x).toLocaleString('fullwide', { useGrouping: false });
+      // console.log(`x=${x}, newX=${newX}`);
+    }
     if (Math.abs(x) < 1.0) {
       let e = parseFloat(x.toString().split("e-")[1]);
       if (e) {

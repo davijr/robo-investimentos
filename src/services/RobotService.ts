@@ -1,8 +1,10 @@
 import logger from '@config/logger';
+import { OportunityStatusEnum } from '@enum/OportunityStatusEnum';
+import { OrderSideEnum } from '@enum/OrderSideEnum';
+import { OrderStatusEnum } from '@enum/OrderStatusEnum';
+import { OrderTypeEnum } from '@enum/OrderTypeEnum';
 import { AppConstants } from '@utils/AppContants';
 import { AppUtils } from '@utils/AppUtils';
-import { OrderSideEnum } from '@enum/OrderSideEnum';
-import { OrderTypeEnum } from '@enum/OrderTypeEnum';
 import WebSocket from 'ws';
 import { RobotStatusEnum } from '../enum/RobotStatusEnum';
 import { ExchangeService } from './ExchangeService';
@@ -10,10 +12,8 @@ import { NotificationService, NotificationSoundType } from './NotificationServic
 import { OportunityService } from './OportunityService';
 import { OrderService } from './OrderService';
 import { SettingsService } from './SettingsService';
-import { WalletService } from './WalletService';
-import { OportunityStatusEnum } from '@enum/OportunityStatusEnum';
-import { OrderStatusEnum } from '@enum/OrderStatusEnum';
 import { TickerService } from './TickerService';
+import { WalletService } from './WalletService';
 
 const oportunityService = new OportunityService();
 const orderService = new OrderService();
@@ -56,11 +56,18 @@ export class RobotService {
       }
       this.createWebSocket(async (event: any) => {
         this.parseStream(event);
-        if (![RobotStatusEnum.STOPPED, RobotStatusEnum.TRADING, RobotStatusEnum.ERROR, RobotStatusEnum.PREPARING].includes(settings.robotStatus)) {
-          this.processBuyBuySell();
-          this.processBuySellSell();
-        }
+        // if (![RobotStatusEnum.STOPPED, RobotStatusEnum.TRADING, RobotStatusEnum.ERROR, RobotStatusEnum.PREPARING].includes(settings.robotStatus)) {
+        //   this.processBuyBuySell();
+        //   this.processBuySellSell();
+        // }
       });
+      // NEW INTERVAL STRATEGY
+      setInterval(async () => {
+        if (![RobotStatusEnum.STOPPED, RobotStatusEnum.TRADING, RobotStatusEnum.ERROR, RobotStatusEnum.PREPARING].includes(settings.robotStatus)) {
+          await this.processBuyBuySell();
+          await this.processBuySellSell();
+        }
+      }, 500);
     }
   }
 
@@ -383,18 +390,37 @@ export class RobotService {
 
   private hasInvalidParams(strategy: 'BBS' | 'BSS', crossRate: number, symbols: any[]) {
     if (symbols.some(i => !i.symbol || !i.price)) {
+      logger.warn('=============================================================================================================================');
       const msg = `strategy: ${strategy} - crossRate: ${crossRate} = ${symbols?.map(i => i.symbol + ' (' + i.price + ')').join(' > ')}`;
       logger.warn('Encontrada uma oportunidade, porém, a triangulação possui parâmetros inválidos. ' + msg);
+      logger.warn('=============================================================================================================================');
       return true;
     }
-    const qty3 = symbols[2].quantity * symbols[2].price;
-    const profitability = (qty3 - settings.amount) / settings.amount;
+    const p1 = symbols[0].price;
+    const p2 = symbols[1].price;
+    const p3 = symbols[2].price;
+    const q1 = symbols[0].quantity;
+    const q2 = symbols[1].quantity;
+    const q3 = symbols[2].quantity;
+    const q3Calculated = symbols[2].quantity * symbols[2].price;
+    const profitability = (q3Calculated - settings.amount) / settings.amount;
     const hasProfit = profitability > 0;
     const valorInicial = `valorInicial: ${settings.amount} ${settings.quote}`;
-    const valorFinal = `valorFinal: ${qty3} ${settings.quote}`;
+    const valorFinal = `valorFinal: ${q3Calculated} ${settings.quote}`;
     if (!hasProfit) {
+      logger.warn('=============================================================================================================================');
       const msg = `strategy: ${strategy} - crossRate: ${crossRate} = ${symbols?.map(i => i.symbol + ' (' + i.quantity + '/' + i.price + ')').join(' > ')}, ${valorInicial}, ${valorFinal}`;
-      logger.warn('Encontrada uma oportunidade, porém, o resultado proposto não parece ser lucrativo. ' + msg);
+      logger.warn('Encontrada uma oportunidade, porém, o resultado proposto não parece ser lucrativo.');
+      logger.warn(msg);
+      if (strategy === 'BSS') {
+        logger.warn(`crossRate = (1 / p1) * p2 * p3 = (${(1 / p1)}) * ${p2} * ${p3} = ${((1 / p1) * p2 * p3)}`);
+      } else {
+        logger.warn(`crossRate = (1 / p1) * (1 / p2) * p3 = (${(1 / p1)}) * (${1 / p2}) * ${p3} = ${((1 / p1) * (1 / p2) * p3)}`);
+      }
+      logger.warn(`q3 = q3 * p3 = ${q3Calculated} * ${p3} = ${q3Calculated * p3}, profitability = (q3 - amount) / amount = (${q3Calculated} - ${settings.amount}) / ${settings.amount} = ${profitability}`);
+      logger.warn(`p1=${p1}, p2=${p2}, p3=${p3}`);
+      logger.warn(`q1=${q1}, q2=${q2}, q3=${q3}`);
+      logger.warn('=============================================================================================================================');
       return true;
     }
     return false;
@@ -556,7 +582,7 @@ export class RobotService {
           oportunity.initialValue = order1.cummulativeQuoteQty;
           // async oportunity updating
           oportunity.status = OportunityStatusEnum.ORDER_FILLED1;
-          oportunityService.update(oportunity);
+          // oportunityService.update(oportunity);
           const secondTransactionType = (strategy === 'BBS') ? OrderSideEnum.BUY : OrderSideEnum.SELL
           const newOrder2 = {
             type: OrderTypeEnum.LIMIT,
@@ -576,7 +602,7 @@ export class RobotService {
             oportunity.ordersResponse.push(AppUtils.validateJson(order2));
             // async oportunity updating
             oportunity.status = OportunityStatusEnum.ORDER_FILLED2;
-            oportunityService.update(oportunity);
+            // oportunityService.update(oportunity);
             const newOrder3 = {
               type: OrderTypeEnum.LIMIT,
               price: ordersRequest[2].price,
