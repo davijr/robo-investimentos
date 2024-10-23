@@ -20,7 +20,8 @@ const schema = new mongoose.Schema({
   exchangeUpdateInterval: Number,
   balancesUpdateInterval: Number,
   stopTimeAfterFinish: Number,
-  attemptIntervals: Array
+  attemptIntervals: Array,
+  taxTriangleBinance: Number
 }, { timestamps: true });
 
 export default mongoose.model('Settings', schema);

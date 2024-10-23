@@ -20,8 +20,9 @@ export class AppConstants {
   static readonly AMOUNT = 100; // em USDT qtd a ser negociada
   static readonly ATTEMPT_INTERVALS = [ // intervalo em segundos que o robô vai aguardar a ordem ser FILLED
     0.1, 0.1, 0.1, 0.2, 0.2, 0.5, 0.5, 1, 5, 15, 30, 60, 60, 60, 60, 60, 300,
-    300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300,
+    300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300
   ];
+  static readonly TAX_TRIANGLE_BINANCE = 1.0023;
   static readonly EXCLUDE_SYMBOLS = [];
   static readonly INCLUDE_SYMBOLS = [
     // "ARKMBNB",

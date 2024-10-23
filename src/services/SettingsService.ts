@@ -19,7 +19,8 @@ export class SettingsService {
         stopTimeAfterFinish: AppConstants.STOP_TIME_AFTER_FINISH,
         includeSymbols: AppConstants.INCLUDE_SYMBOLS,
         excludeSymbols: AppConstants.EXCLUDE_SYMBOLS,
-        attemptIntervals: AppConstants.ATTEMPT_INTERVALS
+        attemptIntervals: AppConstants.ATTEMPT_INTERVALS,
+        taxTriangleBinance: AppConstants.TAX_TRIANGLE_BINANCE,
       });
       return await newSettings.save();
     };
