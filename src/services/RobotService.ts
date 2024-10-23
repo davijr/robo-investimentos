@@ -796,8 +796,19 @@ export class RobotService {
 
   private createWebSocket(callback: (event: any) => {}) {
     const ws = new WebSocket(AppConstants.URL_STREAM);
-    ws.on('open', () => logger.info('Cliente WebSocket foi iniciado.'));
+    ws.on('open', () => {
+      logger.info('Cliente WebSocket foi iniciado.');
+      // Fechar e reconectar a cada 23 horas
+      setTimeout(() => {
+        logger.warn('Reconectando após 23 horas...');
+        ws.close();  // Fechando a conexão atual para reconectar
+      }, 23 * 60 * 60 * 1000);  // 23 horas em milissegundos
+    });
     ws.on('message', callback);
+    ws.on('error', (error) => {
+      logger.error('Erro no WebSocket:', error);
+      ws.close();  // Fecha a conexão em caso de erro para tentar reconectar
+    });
   }
   
   // private processBuyBuySellOld() {
