@@ -246,7 +246,8 @@ export class RobotService {
             const q1 = this.applyValidations(settings.amount / p1, candidate.buy1.filters, 'LOT_SIZE');
             const q2 = this.applyValidations(q1 / p2, candidate.buy2.filters, 'LOT_SIZE');
             const q3 = this.applyValidations(q2, candidate.sell.filters, 'LOT_SIZE');
-            const finalAmount = (q3 * p3) - settings.amount;
+            const finalAmount = (q3 * p3) - (q1 * p1);
+            const tax = finalAmount * (1 - settings.taxTriangleBinance);
             const ordersRequest = [
               {
                 symbol: candidate.buy1.symbol,
@@ -276,13 +277,13 @@ export class RobotService {
                 ordersRequest
               };
               oportunityService.create(oportunity);
-              logger.info(`# BBS: BUY qty1 = ${q1} ${candidate.buy1.symbol}(${p1}), BUY qty2 = ${q2} ${candidate.buy2.symbol}(${p2}), SELL qty3 = ${q3} ${candidate.sell.symbol}(${p3})`);
-              logger.info(`# Previsão de retorno de aproximadamente: ${finalAmount} ${settings.quote}`);
+              logger.info(`# BBS: crossRate=${crossRate}, q1=${q1} ${candidate.buy1.symbol}(${p1}), q2=${q2} ${candidate.buy2.symbol}(${p2}), q3=${q3} ${candidate.sell.symbol}(${p3})`);
+              logger.info(`# Lucro esperado: ${finalAmount - tax} ${settings.quote}, taxa: ${tax} ${settings.quote}.`);
               // await this.executeStrategy(oportunidade);
               await this.execution(oportunity);
               break;
             }
-          } else if (crossRate > 1.00075) {
+          } else if (crossRate > settings.taxTriangleBinance) {
             logger.warn(`BBS - crossRate: ${crossRate} = ${candidate.buy1.symbol} (${p1}) > ${candidate.buy2.symbol} (${p2}) > ${candidate.sell.symbol} (${p3})`);
           }
         }
@@ -309,7 +310,8 @@ export class RobotService {
             const q1 = this.applyValidations(settings.amount / p1, candidate.buy.filters, 'LOT_SIZE');
             const q2 = this.applyValidations(q1, candidate.sell1.filters, 'LOT_SIZE');
             const q3 = this.applyValidations(q2 * p2, candidate.sell2.filters, 'LOT_SIZE');
-            // const finalAmount = (q3 * p3) - settings.amount;
+            const finalAmount = (q3 * p3) - (q1 * p1);
+            const tax = finalAmount * (1 - settings.taxTriangleBinance);
             // logger.info(`# Investindo ${settings.quote} ${settings.amount}, retorna ${settings.quote} ${((settings.amount / priceBuy) / priceSell1) * priceSell2}`);
             const ordersRequest = [
               {
@@ -340,13 +342,14 @@ export class RobotService {
                 ordersRequest
               };
               oportunityService.create(oportunity);
-              logger.info(`# BSS: BUY qty1 = ${q1} ${candidate.buy.symbol}(${p1}), SELL qty2 = ${q2} ${candidate.buy.symbol}(${p2}), SELL qty3 = ${q3} ${candidate.sell1.symbol}(${p3})`);
+              logger.info(`# BSS: crossRate=${crossRate}, q1=${q1} ${candidate.buy.symbol}(${p1}), q2=${q2} ${candidate.buy.symbol}(${p2}), q3=${q3} ${candidate.sell1.symbol}(${p3})`);
+              logger.info(`# Lucro esperado: ${finalAmount - tax} ${settings.quote}, taxa: ${tax} ${settings.quote}.`);
               // logger.info(`# Previsão de retorno de aproximadamente: ${finalAmount} ${settings.quote}`);
               // await this.executeStrategy(oportunidade);
               await this.execution(oportunity);
               break;
             }
-          } else if (crossRate > 1.00075) {
+          } else if (crossRate > settings.taxTriangleBinance) {
             logger.warn(`BSS - crossRate: ${crossRate} = ${candidate.buy.symbol} (${p1}) > ${candidate.sell1.symbol} (${p2}) > ${candidate.sell2.symbol} (${p3})`);
           }
         }
