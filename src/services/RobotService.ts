@@ -68,6 +68,10 @@ export class RobotService {
           await this.processBuySellSell();
         }
       }, 500);
+
+      setInterval(() => {
+        exchangeService.checkLatency();
+      }, 5 * 60 * 1000); // ping a cada 5 minutos
     }
   }
 

@@ -76,4 +76,18 @@ export class ExchangeService {
         }
       });
   }
+
+  // Função para medir a latência
+  async checkLatency() {
+    const start = Date.now();
+    try {
+        // Faz uma requisição para o endpoint "ping" da Binance, que é utilizado para testar a conexão
+        await axios.get(`${AppConstants.API_URL}/v3/ping`);
+        const end = Date.now();
+        const latency = end - start; // Calcula a latência
+        logger.info(`## Ping/Latência API da Binance: ${latency}ms`); 
+    } catch (error: any) {
+        throw new Error(`Erro ao acessar a API da Binance: ${error.message}`);
+    }
+  }
 }
